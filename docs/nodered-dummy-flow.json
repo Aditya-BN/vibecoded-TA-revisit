@@ -2,9 +2,9 @@
   {
     "id": "agri_tab",
     "type": "tab",
-    "label": "Agrisoil dummy device",
+    "label": "Agrisoil dummy sensors",
     "disabled": false,
-    "info": "Pretends to be the agrisoil ESP32. Publishes the same MQTT topics and payloads as agrisoil/send_mqtt.ino, and serves the ngrok port lookup."
+    "info": "Pretends to be several agrisoil ESP32 sensors (env AGRI_DEVICES). Publishes the same MQTT topics as agrisoil/send_mqtt.ino and serves the MQTT port lookup."
   },
   {
     "id": "agri_tick",
@@ -19,18 +19,27 @@
     "topic": "",
     "x": 130,
     "y": 80,
-    "wires": [["agri_fake"]]
+    "wires": [
+      [
+        "agri_fake"
+      ]
+    ]
   },
   {
     "id": "agri_fake",
     "type": "function",
     "z": "agri_tab",
-    "name": "fake agrisoil reading",
-    "func": "// Random walk around realistic soil values, so charts look alive.\n// Ranges match the firmware's calibration clamps.\nconst BASE_LAT = env.get('AGRI_LAT') || -6.200000; // set to your field\nconst BASE_LNG = env.get('AGRI_LNG') || 106.816666;\n\nlet s = context.get('s') || { n: 200, p: 15, k: 120, ph: 6.5, moist: 50, lat: Number(BASE_LAT), lng: Number(BASE_LNG) };\n\nfunction walk(v, step, min, max) {\n    v += (Math.random() * 2 - 1) * step;\n    return Math.min(max, Math.max(min, v));\n}\n\ns.n = walk(s.n, 10, 60, 350);\ns.p = walk(s.p, 1, 5, 30);\ns.k = walk(s.k, 5, 70, 170);\ns.ph = walk(s.ph, 0.05, 5.0, 8.0);\ns.moist = walk(s.moist, 2, 20, 90);\ns.lat = walk(s.lat, 0.00002, s.lat - 0.001, s.lat + 0.001);\ns.lng = walk(s.lng, 0.00002, s.lng - 0.001, s.lng + 0.001);\ncontext.set('s', s);\n\n// Raw ADC counts, back-calculated from the ADS1115 calibration.\nconst npk1 = Math.round((46510 - s.n) / 8.1731);\nconst npk2 = npk1 + Math.round(Math.random() * 40 - 20);\nconst moistRaw = Math.round(11940 - (s.moist / 100) * (11940 - 4680));\nconst phRaw = Math.round(300 + Math.random() * 50);\n\nconst gpsValid = Math.random() > 0.1; // 10% of readings without a GPS fix\n\nconst out = [\n    { topic: 'agrisoil/val/moist', payload: s.moist.toFixed(2) },\n    { topic: 'agrisoil/val/ph', payload: s.ph.toFixed(2) },\n    { topic: 'agrisoil/val/nit', payload: s.n.toFixed(2) },\n    { topic: 'agrisoil/val/phos', payload: s.p.toFixed(2) },\n    { topic: 'agrisoil/val/kal', payload: s.k.toFixed(2) },\n    { topic: 'agrisoil/raw/moist', payload: String(moistRaw) },\n    { topic: 'agrisoil/raw/ph', payload: String(phRaw) },\n    { topic: 'agrisoil/raw/npk1', payload: String(npk1) },\n    { topic: 'agrisoil/raw/npk2', payload: String(npk2) }\n];\nif (gpsValid) {\n    out.push({ topic: 'agrisoil/loc/lat', payload: s.lat.toFixed(6) });\n    out.push({ topic: 'agrisoil/loc/lng', payload: s.lng.toFixed(6) });\n}\nreturn [out];\n",
+    "name": "fake agrisoil sensors",
+    "func": "// Pretends to be several agrisoil sensors at once.\n// Same topics and payloads as agrisoil/send_mqtt.ino.\n// Add a sensor = add a name to AGRI_DEVICES (env var), no other change.\nconst devices = (env.get('AGRI_DEVICES') || 'Alat1,Alat2,Alat3').split(',').map(d => d.trim()).filter(Boolean);\nconst BASE_LAT = Number(env.get('AGRI_LAT') || -6.200000); // set to your field\nconst BASE_LNG = Number(env.get('AGRI_LNG') || 106.816666);\n\nfunction walk(v, step, min, max) {\n    v += (Math.random() * 2 - 1) * step;\n    return Math.min(max, Math.max(min, v));\n}\n\nfunction pad(x) { return String(x).padStart(2, '0'); }\n// \"YYYY-MM-DD HH:MM:SS\" in WIB (UTC+7), like the firmware\nconst t = new Date(Date.now() + 7 * 3600 * 1000);\nconst waktu = t.getUTCFullYear() + '-' + pad(t.getUTCMonth() + 1) + '-' + pad(t.getUTCDate()) + ' ' +\n    pad(t.getUTCHours()) + ':' + pad(t.getUTCMinutes()) + ':' + pad(t.getUTCSeconds());\n\nconst all = context.get('state') || {};\nconst out = [];\n\ndevices.forEach((id, i) => {\n    // every sensor starts somewhere different, so the charts differ\n    let s = all[id] || {\n        n: 120 + i * 60, p: 10 + i * 4, k: 90 + i * 20, ph: 5.8 + i * 0.4, moist: 35 + i * 10,\n        lat: BASE_LAT + i * 0.002, lng: BASE_LNG + i * 0.002\n    };\n    s.n = walk(s.n, 10, 60, 350);\n    s.p = walk(s.p, 1, 5, 30);\n    s.k = walk(s.k, 5, 70, 170);\n    s.ph = walk(s.ph, 0.05, 5.0, 8.0);\n    s.moist = walk(s.moist, 2, 20, 90);\n    all[id] = s;\n\n    // Raw ADC counts, back-calculated from the ADS1115 calibration.\n    const npk1 = Math.round((46510 - s.n) / 8.1731);\n    const npk2 = npk1 + Math.round(Math.random() * 40 - 20);\n    const moistRaw = Math.round(11940 - (s.moist / 100) * (11940 - 4680));\n    const phRaw = Math.round(300 + Math.random() * 50);\n    const gpsValid = Math.random() > 0.1; // 10% of readings without a GPS fix\n\n    const base = 'agrisoil/' + id + '/';\n    const reading = {\n        device: id, waktu: waktu,\n        n: +s.n.toFixed(2), p: +s.p.toFixed(2), k: +s.k.toFixed(2),\n        ph: +s.ph.toFixed(2), moist: +s.moist.toFixed(2),\n        npk1_raw: npk1, npk2_raw: npk2, moist_raw: moistRaw, ph_raw: phRaw,\n        in_soil: true,\n        lat: gpsValid ? +s.lat.toFixed(6) : null,\n        lng: gpsValid ? +s.lng.toFixed(6) : null\n    };\n\n    out.push({ topic: base + 'reading', payload: JSON.stringify(reading), retain: true });\n    out.push({ topic: base + 'val/moist', payload: s.moist.toFixed(2) });\n    out.push({ topic: base + 'val/ph', payload: s.ph.toFixed(2) });\n    out.push({ topic: base + 'val/nit', payload: s.n.toFixed(2) });\n    out.push({ topic: base + 'val/phos', payload: s.p.toFixed(2) });\n    out.push({ topic: base + 'val/kal', payload: s.k.toFixed(2) });\n    out.push({ topic: base + 'raw/moist', payload: String(moistRaw) });\n    out.push({ topic: base + 'raw/ph', payload: String(phRaw) });\n    out.push({ topic: base + 'raw/npk1', payload: String(npk1) });\n    out.push({ topic: base + 'raw/npk2', payload: String(npk2) });\n    if (gpsValid) {\n        out.push({ topic: base + 'loc/lat', payload: s.lat.toFixed(6) });\n        out.push({ topic: base + 'loc/lng', payload: s.lng.toFixed(6) });\n    }\n});\n\ncontext.set('state', all);\nreturn [out];\n",
     "outputs": 1,
     "x": 340,
     "y": 80,
-    "wires": [["agri_mqtt_out", "agri_debug"]]
+    "wires": [
+      [
+        "agri_mqtt_out",
+        "agri_debug"
+      ]
+    ]
   },
   {
     "id": "agri_mqtt_out",
@@ -38,8 +47,8 @@
     "z": "agri_tab",
     "name": "to broker",
     "topic": "",
-    "qos": "0",
-    "retain": "false",
+    "qos": "",
+    "retain": "",
     "broker": "agri_broker",
     "x": 560,
     "y": 60,
@@ -66,7 +75,11 @@
     "method": "get",
     "x": 150,
     "y": 200,
-    "wires": [["agri_port_fn"]]
+    "wires": [
+      [
+        "agri_port_fn"
+      ]
+    ]
   },
   {
     "id": "agri_port_fn",
@@ -77,7 +90,11 @@
     "outputs": 1,
     "x": 360,
     "y": 200,
-    "wires": [["agri_port_out"]]
+    "wires": [
+      [
+        "agri_port_out"
+      ]
+    ]
   },
   {
     "id": "agri_port_out",
@@ -94,7 +111,7 @@
     "id": "agri_broker",
     "type": "mqtt-broker",
     "name": "agrisoil broker",
-    "broker": "localhost",
+    "broker": "mosquitto",
     "port": "1883",
     "clientid": "Agrisoil_dummy",
     "autoConnect": true,

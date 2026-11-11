@@ -20,6 +20,11 @@
 //=========================== PILIH-PILIH DULU ===========================
 // Everything you'd want to flip lives here. 1 = on, 0 = off.
 
+// Who am I? Every sensor needs its own name.
+// It goes into the MQTT topics, the MQTT client id and the Firebase paths,
+// so a new sensor = new name here = its own dashboard. Letters, numbers, _ only.
+#define DEVICE_ID "Alat3"
+
 // How should we read the sensors?
 //   READ_WITH_ADS1115   -> 2x ADS1115 at 0x48 & 0x49 (calibration from codingTA)
 //   READ_WITH_ESP32_ADC -> analogRead() on the ESP32 (calibration from npkgis)

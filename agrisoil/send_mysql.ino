@@ -11,7 +11,8 @@ void sendToMysql()
 {
   Serial.println("=> Kirim ke MySQL");
 
-  String postData = "kelembaban=" + String(nilaiMoist) +
+  String postData = "device_id=" + String(DEVICE_ID) +
+                    "&kelembaban=" + String(nilaiMoist) +
                     "&ph=" + String(nilaiPH) +
                     "&nilai_n=" + String(nilaiN) +
                     "&nilai_p=" + String(nilaiP) +

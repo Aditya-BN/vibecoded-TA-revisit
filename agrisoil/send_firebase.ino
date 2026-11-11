@@ -1,14 +1,15 @@
 //=========================== SEND: FIREBASE ===========================
 // Two places in the realtime database:
-//   /Alat3_rt -> latest reading, overwritten every time (for the live view)
-//   /Alat3    -> history, a new child is pushed every time
+//   /<DEVICE_ID>_rt -> latest reading, overwritten every time (for the live view)
+//   /<DEVICE_ID>    -> history, a new child is pushed every time
+// With DEVICE_ID "Alat3" that's /Alat3_rt and /Alat3, same as the old dashboard.
 // Key names are kept exactly as the dashboard expects them.
 #if SEND_TO_FIREBASE
 
 #include <FirebaseESP32.h>
 
-#define FIREBASE_LATEST_PATH "/Alat3_rt"
-#define FIREBASE_HISTORY_PATH "/Alat3"
+#define FIREBASE_LATEST_PATH "/" DEVICE_ID "_rt"
+#define FIREBASE_HISTORY_PATH "/" DEVICE_ID
 
 FirebaseData fbdo;
 FirebaseAuth auth;

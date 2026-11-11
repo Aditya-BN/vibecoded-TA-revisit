@@ -3,7 +3,7 @@
 The stack is running in `agrisoil-dev` on cluster `workload01`: 5 pods, 4 dummy sensors, and the dashboard works.
 The PR is **not** opened (no GitHub token on the bastion), so use the link at the bottom.
 
-## What's live (internal network, plain HTTP)
+## What's live (nip.io = internal HTTP; adityabn.my.id = public HTTPS)
 | What | URL | Login (Secret in `agrisoil-dev`) |
 |---|---|---|
 | Dashboard | http://agrisoil.10.12.135.205.nip.io | none to view; renaming a sensor uses `dashboard-auth` |

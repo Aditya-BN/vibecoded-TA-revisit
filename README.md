@@ -40,3 +40,21 @@ A turned-off feature isn't compiled at all, so you don't even need its library i
 | GPS | RX2 16, TX2 17 |
 | Battery relay 1 / 2 | 18 / 19 |
 | ESP32 ADC probes | 35 by default (change in `sensor_esp32_adc.ino`) |
+
+## Kubernetes stack + multi-sensor dashboard
+Mosquitto → Node-RED ingest → PostgreSQL → dashboard, all in namespace `agrisoil-dev`.
+
+```sh
+./deploy/k8s/make-secrets.sh      # once: random passwords into Kubernetes Secrets
+kubectl apply -k deploy/k8s
+```
+
+| Folder | What |
+| --- | --- |
+| `deploy/k8s/` | Kustomize manifests (Mosquitto, Postgres, Node-RED, dashboard, ingress) |
+| `nodered/` | Node-RED settings + flows (`flows/dummy-sensors.json`, `flows/ingest.json`) |
+| `dashboard/` | Web app + API (Node.js, reads Postgres) |
+| `docs/DECISIONS.md` | Why things are the way they are |
+
+A new `DEVICE_ID` that publishes to `agrisoil/<id>/reading` shows up on the dashboard by itself.
+More dummy sensors: edit `AGRI_DEVICES` in `deploy/k8s/kustomization.yaml` and apply.

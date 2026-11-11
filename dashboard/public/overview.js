@@ -44,7 +44,7 @@ function updateMap(devices) {
     }
   }
   if (!fitted && pts.length) {
-    map.fitBounds(pts, { padding: [40, 40], maxZoom: 16 });
+    map.fitBounds(pts, { paddingTopLeft: [40, 70], paddingBottomRight: [40, 30], maxZoom: 16 });
     fitted = true;
   }
 }

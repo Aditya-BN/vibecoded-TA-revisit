@@ -2,11 +2,11 @@
 'use strict';
 
 const FIELDS = [
-  { key: 'n', label: 'Nitrogen (N)', unit: 'ppm', digits: 1, color: '#2f7d32' },
-  { key: 'p', label: 'Fosfor (P)', unit: 'ppm', digits: 1, color: '#c26a00' },
-  { key: 'k', label: 'Kalium (K)', unit: 'ppm', digits: 1, color: '#7b3fa0' },
-  { key: 'ph', label: 'pH tanah', unit: 'pH', digits: 2, color: '#c0392b' },
-  { key: 'moist', label: 'Kelembapan', unit: '%', digits: 1, color: '#1f6fb2' },
+  { key: 'n', short: 'N', label: 'Nitrogen (N)', unit: 'ppm', digits: 1, color: '#2f7d32' },
+  { key: 'p', short: 'P', label: 'Fosfor (P)', unit: 'ppm', digits: 1, color: '#c26a00' },
+  { key: 'k', short: 'K', label: 'Kalium (K)', unit: 'ppm', digits: 1, color: '#7b3fa0' },
+  { key: 'ph', short: 'pH', label: 'pH tanah', unit: 'pH', digits: 2, color: '#c0392b' },
+  { key: 'moist', short: 'Lembap', label: 'Kelembapan', unit: '%', digits: 1, color: '#1f6fb2' },
 ];
 const RAW_FIELDS = [
   { key: 'npk1_raw', label: 'NPK 1', color: '#2f7d32' },

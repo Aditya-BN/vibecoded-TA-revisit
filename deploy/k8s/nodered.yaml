@@ -24,6 +24,7 @@ spec:
           command: [sh, /config/init.sh]
           env: &env
             - {name: EXTRA_NODES, value: "node-red-contrib-postgresql@0.16.2"}
+            - {name: FLOWS, value: /run/nodered/flows.json}   # the image passes $FLOWS to node-red, overriding settings.flowFile
             - {name: npm_config_cache, value: /tmp/.npm}
             - {name: TZ, value: Asia/Jakarta}
             - {name: MQTT_USER, value: nodered}
@@ -35,6 +36,8 @@ spec:
             - {name: PGUSER, value: agrisoil}
             - name: PGPASSWORD
               valueFrom: {secretKeyRef: {name: postgres-auth, key: agrisoil-password}}
+            - name: NR_CREDENTIAL_SECRET
+              valueFrom: {secretKeyRef: {name: nodered-auth, key: credential-secret}}
             - name: NR_ADMIN_USER
               valueFrom: {secretKeyRef: {name: nodered-auth, key: admin-user}}
             - name: NR_ADMIN_PASSWORD

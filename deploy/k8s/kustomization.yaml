@@ -27,7 +27,7 @@ configMapGenerator:
   # Dummy sensors + MQTT port lookup. Add a sensor here, then: kubectl apply -k deploy/k8s
   - name: nodered-env
     literals:
-      - AGRI_DEVICES=Alat1,Alat2,Alat3
+      - AGRI_DEVICES=Alat1,Alat2,Alat3,Alat4
       - AGRI_LAT=-6.200000
       - AGRI_LNG=106.816666
       # Port /getngrokport hands to the ESP32. In-cluster: 1883. Real sensors: whatever exposes the broker.

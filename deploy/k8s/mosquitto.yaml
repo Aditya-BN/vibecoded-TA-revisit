@@ -46,6 +46,7 @@ spec:
               valueFrom: {secretKeyRef: {name: mosquitto-auth, key: device-password}}
           volumeMounts:
             - {name: auth, mountPath: /mosquitto/auth}
+            - {name: tmp, mountPath: /tmp}   # mosquitto_passwd writes a temp file
           securityContext: &sc
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
@@ -75,8 +76,10 @@ spec:
           persistentVolumeClaim: {claimName: mosquitto-data}
         - name: auth
           emptyDir: {medium: Memory, sizeLimit: 1Mi}
+        - name: tmp
+          emptyDir: {medium: Memory, sizeLimit: 1Mi}
         - name: config
-          configMap: {name: mosquitto-config}
+          configMap: {name: mosquitto-config, defaultMode: 0440}   # group 1883 via fsGroup
 ---
 apiVersion: v1
 kind: Service

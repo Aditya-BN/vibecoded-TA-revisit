@@ -26,8 +26,8 @@ Each entry: **what I chose** / *why*.
 ## Node-RED
 - **Flows are rebuilt from git on every start (`nodered/flows/*.json` merged into `/run/nodered/flows.json`, in memory).**
   *Git is the source of truth. Edits made in the editor are lost on restart: export them into the repo.*
-- **MQTT logins are written by the init container to an in-memory `flows_cred.json`; `credentialSecret: false`.**
-  *No credentials on the PVC, nothing to encrypt, nothing committed.*
+- **MQTT logins are written by the init container to `/data/flows_cred.json`, encrypted exactly like Node-RED does (AES-256-CTR, key = sha256 of `credential-secret` in `nodered-auth`).**
+  *Node-RED always reads the cred file from `userDir` (the PVC), and doesn't expand `${ENV}` in credentials. Encrypted at rest, nothing committed.*
 - **`adminAuth` uses a custom `authenticate` and http-in auth uses `httpNodeMiddleware` (basic auth), both comparing against plain passwords from the `nodered-auth` Secret.**
   *Same effect as `adminAuth`/`httpNodeAuth` without pre-computing bcrypt hashes.*
 - **`/getngrokport` returns `AGRI_MQTT_PORT` from the `nodered-env` ConfigMap (default 1883).** *Configurable without code change, as the brief asks.*

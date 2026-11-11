@@ -17,9 +17,10 @@ module.exports = {
     uiPort: 1880,
     userDir: '/data',
     // Flows are rebuilt from git (nodered/flows/*.json) on every start and kept in memory,
-    // so the repo stays the source of truth and credentials never touch the PVC.
+    // so the repo stays the source of truth. The image's FLOWS env var points here too.
     flowFile: '/run/nodered/flows.json',
-    credentialSecret: false,
+    // flows_cred.json (in /data) is written encrypted by init.sh with this key.
+    credentialSecret: process.env.NR_CREDENTIAL_SECRET,
 
     // adminAuth: editor + admin API
     adminAuth: {

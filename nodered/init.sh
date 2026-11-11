@@ -2,7 +2,8 @@
 # Runs in the Node-RED init container before every start.
 # 1. Install extra nodes into the PVC (only when the version changes).
 # 2. Merge every flows/*.json into one flow file in memory.
-# 3. Write the MQTT broker logins into flows_cred.json (memory only).
+# 3. Write the MQTT broker logins into /data/flows_cred.json, encrypted the way Node-RED
+#    does it (Node-RED always reads the cred file from userDir, which is the PVC).
 set -eu
 
 cp /config/settings.js /data/settings.js
@@ -37,6 +38,11 @@ fs.writeFileSync("/run/nodered/flows.json", JSON.stringify(all, null, 2));
 // every mqtt-broker node logs in as the "nodered" user
 const cred = {};
 for (const n of all) if (n.type === "mqtt-broker") cred[n.id] = { user: process.env.MQTT_USER, password: process.env.MQTT_PASSWORD };
-fs.writeFileSync("/run/nodered/flows_cred.json", JSON.stringify(cred), { mode: 0o600 });
+const crypto = require("crypto");
+const key = crypto.createHash("sha256").update(process.env.NR_CREDENTIAL_SECRET).digest();
+const iv = crypto.randomBytes(16);
+const c = crypto.createCipheriv("aes-256-ctr", key, iv);
+const enc = c.update(JSON.stringify(cred), "utf8", "base64") + c.final("base64");
+fs.writeFileSync("/data/flows_cred.json", JSON.stringify({ $: iv.toString("hex") + enc }), { mode: 0o600 });
 console.log("credentials for", Object.keys(cred).join(", "));
 '

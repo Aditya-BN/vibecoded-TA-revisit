@@ -24,5 +24,6 @@ make() {
 kubectl get ns "$NS" >/dev/null 2>&1 || kubectl create ns "$NS"
 make mosquitto-auth "nodered-password=$(rand)" "device-password=$(rand)"
 make postgres-auth "agrisoil-password=$(rand)" "dashboard-password=$(rand)"
-make nodered-auth "admin-user=admin" "admin-password=$(rand)" "http-user=agrisoil" "http-password=$(rand)"
+make nodered-auth "admin-user=admin" "admin-password=$(rand)" "http-user=agrisoil" "http-password=$(rand)" \
+  "credential-secret=$(rand)"
 make dashboard-auth "admin-user=admin" "admin-password=$(rand)"

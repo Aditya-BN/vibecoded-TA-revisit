@@ -8,7 +8,7 @@ let fitted = false;
 
 function card(d) {
   const values = FIELDS.map((f) => `
-    <div class="value"><div class="lbl">${esc(f.label)}</div><div class="num">${withUnit(f, d[f.key])}</div></div>`).join('');
+    <div class="value" title="${esc(f.label)}"><div class="lbl">${esc(f.short)}</div><div class="num">${withUnit(f, d[f.key])}</div></div>`).join('');
   const soil = d.in_soil === false ? ' <span class="pill warn">tidak di tanah</span>' : '';
   return `
     <a class="card ${d.online ? '' : 'offline'}" href="/devices/${encodeURIComponent(d.id)}">

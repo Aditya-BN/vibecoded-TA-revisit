@@ -10,7 +10,8 @@ Read N, P, K, pH and moisture → tag with GPS + time → show on OLED → send 
 ## Getting started
 1. Copy `agrisoil/secret.example.h` to `agrisoil/secret.h` and fill in WiFi, Node-RED and Firebase credentials.
 2. Open `agrisoil/agrisoil.ino` and set the switches in the **PILIH-PILIH DULU** block.
-3. Board: *ESP32 Dev Module*. Upload.
+3. Board: *ESP32 Dev Module*, Partition Scheme: **Huge APP (3MB No OTA/1MB SPIFFS)**. Upload.
+   (With Firebase on, the sketch is ~1.4 MB, too big for the default 1.2 MB partition on ESP32 core 3.x.)
 
 ## The switches
 | Switch | Options |

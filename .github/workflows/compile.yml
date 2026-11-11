@@ -1,0 +1,55 @@
+# Compiles the agrisoil sketch on GitHub's servers every push.
+# Free for public repos.
+name: Compile
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  compile:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        core: ["2.0.17", "3.0.7"]
+        variant: [ads1115, esp32_adc, minimal]
+
+    name: esp32 ${{ matrix.core }} / ${{ matrix.variant }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: arduino/setup-arduino-cli@v2
+
+      - name: Install ESP32 core
+        run: |
+          arduino-cli config init
+          arduino-cli config add board_manager.additional_urls https://espressif.github.io/arduino-esp32/package_esp32_index.json
+          arduino-cli core update-index
+          arduino-cli core install esp32:esp32@${{ matrix.core }}
+
+      - name: Install libraries
+        run: |
+          arduino-cli lib install ADS1X15 "Adafruit SSD1306" "Adafruit GFX Library" TinyGPSPlus PubSubClient "Firebase ESP32 Client"
+
+      - name: Prepare sketch
+        working-directory: agrisoil
+        run: |
+          cp secret.example.h secret.h
+          case "${{ matrix.variant }}" in
+            ads1115)
+              sed -i 's/^#define READ_METHOD .*/#define READ_METHOD READ_WITH_ADS1115/' agrisoil.ino ;;
+            esp32_adc)
+              sed -i 's/^#define READ_METHOD .*/#define READ_METHOD READ_WITH_ESP32_ADC/' agrisoil.ino ;;
+            minimal)
+              # every switch off, awake mode, small OLED
+              sed -i -E 's/^#define (SEND_TO_MQTT|SEND_TO_FIREBASE|SEND_TO_MYSQL|USE_GPS|USE_DEEP_SLEEP) 1/#define \1 0/' agrisoil.ino
+              sed -i 's/^#define OLED_HEIGHT 64/#define OLED_HEIGHT 32/' agrisoil.ino ;;
+          esac
+          grep -nE '^#define (READ_METHOD|SEND_TO|USE_|OLED_HEIGHT)' agrisoil.ino
+
+      - name: Compile
+        # Huge APP partition: Firebase + TLS is too big for the default 1.2 MB on core 3.x
+        run: arduino-cli compile --fqbn esp32:esp32:esp32:PartitionScheme=huge_app --warnings default agrisoil

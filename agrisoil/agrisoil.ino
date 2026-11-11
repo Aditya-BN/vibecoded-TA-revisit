@@ -56,34 +56,35 @@
 #include <Wire.h>
 #include "secret.h" // no secret.h yet? copy secret.example.h and fill it in
 
-//=========================== SHARED DATA ===========================
-// One full measurement. Every tab speaks this language.
-struct SoilReading
-{
-  float nitrogen;   // ppm
-  float phosphorus; // ppm
-  float potassium;  // ppm
-  float ph;         // 1 - 14
-  float moisture;   // %
+//=========================== HASIL BACAAN ===========================
+// Filled by readSoil(), readGps() and readClock().
+// Every other tab just reads these.
 
-  // Raw ADC counts. Not pretty, but you'll want them when re-calibrating.
-  int32_t npkRaw;
-  int32_t npk2Raw;
-  int32_t moistureRaw;
-  int32_t phRaw;
+// soil, already calibrated
+float nilaiN;     // ppm
+float nilaiP;     // ppm
+float nilaiK;     // ppm
+float nilaiPH;    // 1 - 14
+float nilaiMoist; // %
 
-  bool probeInSoil;
-};
+// soil, raw ADC counts (you'll want these when re-calibrating)
+long npk1ADC;
+long npk2ADC;
+long moistADC;
+long phADC;
 
-struct GpsFix
-{
-  bool valid;
-  double latitude;
-  double longitude;
-  uint32_t satellites;
-};
+bool probeInSoil;
 
-uint32_t lastMeasurementAt = 0;
+// where
+bool gpsValid;
+double latitude;
+double longitude;
+int satellites;
+
+// when
+String waktu;
+
+unsigned long previousMillis = 0;
 
 //=========================== SETUP ===========================
 void setup()
@@ -106,7 +107,7 @@ void setup()
 #if USE_DEEP_SLEEP
   //******************** battery mode: one shot, then turu
   showMessage("Nyari satelit...", "");
-  waitForGpsFix(GPS_FIX_TIMEOUT_MS);
+  waitForGpsFix();
 
   measureAndSend();
   goToSleep();
@@ -121,9 +122,9 @@ void loop()
 {
   feedGps();
 
-  if (millis() - lastMeasurementAt >= MEASURE_INTERVAL_MS)
+  if (millis() - previousMillis >= MEASURE_INTERVAL_MS)
   {
-    lastMeasurementAt = millis();
+    previousMillis = millis();
     measureAndSend();
   }
 }
@@ -133,14 +134,14 @@ void measureAndSend()
 {
   showMessage("Membaca", "sensor...");
 
-  SoilReading soil = readSoil();
-  GpsFix where = currentGpsFix();
-  String when = currentTimestamp();
+  readSoil();
+  readGps();
+  readClock();
 
-  printReading(soil, where, when);
-  showReading(soil);
+  printReading();
+  showReading();
 
-  sendEverywhere(soil, where, when);
+  sendEverywhere();
 }
 
 //=========================== UPLOADS ===========================
@@ -154,7 +155,7 @@ void beginUploads()
 #endif
 }
 
-void sendEverywhere(const SoilReading &soil, const GpsFix &where, const String &when)
+void sendEverywhere()
 {
   if (!ensureWifi())
   {
@@ -163,12 +164,12 @@ void sendEverywhere(const SoilReading &soil, const GpsFix &where, const String &
   }
 
 #if SEND_TO_MQTT
-  sendToMqtt(soil, where);
+  sendToMqtt();
 #endif
 #if SEND_TO_FIREBASE
-  sendToFirebase(soil, where, when);
+  sendToFirebase();
 #endif
 #if SEND_TO_MYSQL
-  sendToMysql(soil, where);
+  sendToMysql();
 #endif
 }

@@ -5,8 +5,8 @@
 #include "soc/soc.h"
 #include "soc/rtc_cntl_reg.h"
 
-const uint8_t RELAY_BATTERY_1_PIN = 18;
-const uint8_t RELAY_BATTERY_2_PIN = 19;
+#define RELAY_BATTERY_1_PIN 18
+#define RELAY_BATTERY_2_PIN 19
 
 // Lives in RTC memory, so it survives deep sleep (but not a power cut).
 RTC_DATA_ATTR int bootCount = 0;

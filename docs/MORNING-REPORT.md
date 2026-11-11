@@ -7,8 +7,9 @@ The PR is **not** opened (no GitHub token on the bastion), so use the link at th
 | What | URL | Login (Secret in `agrisoil-dev`) |
 |---|---|---|
 | Dashboard | http://agrisoil.10.12.135.205.nip.io | none to view; renaming a sensor uses `dashboard-auth` |
-| Node-RED editor | http://nodered-agrisoil.10.12.135.205.nip.io | `nodered-auth` (`admin-user` / `admin-password`) |
-| Port lookup | …/getngrokport on the Node-RED host | `nodered-auth` (`http-user` / `http-password`) |
+| Node-RED editor (public) | **https://new-nodered.adityabn.my.id** (Cloudflare Tunnel) | `nodered-auth` (`admin-user` / `admin-password`) |
+| Node-RED editor (internal) | http://nodered-agrisoil.10.12.135.205.nip.io | same |
+| Port lookup | https://new-nodered.adityabn.my.id/getngrokport | `nodered-auth` (`http-user` / `http-password`) |
 | MQTT | `mosquitto:1883`, inside the cluster only | `mosquitto-auth` (users `nodered`, `device`) |
 | Postgres | `postgres:5432`, db `agrisoil` | `postgres-auth` (`agrisoil-password`, `dashboard-password`) |
 
@@ -30,7 +31,7 @@ Also tested: bad JSON, a non-object payload and a bad device ID are logged and d
 ## Add a real sensor
 1. In `agrisoil/agrisoil.ino`, set a new `DEVICE_ID` (letters, digits and `_` only).
 2. **New:** add `mqttUser` / `mqttPassword` to your `secret.h` (see `secret.example.h`). Use the `device` login from `mosquitto-auth`, because the broker refuses anonymous clients.
-3. In `send_mqtt.ino`, point `MQTT_HOST` / `MQTT_PORT_URL` at the new broker / Node-RED. **Blocked:** the broker isn't reachable from outside the cluster yet (see below).
+3. In `send_mqtt.ino`, set `MQTT_PORT_URL` to `https://new-nodered.adityabn.my.id/getngrokport` and point `MQTT_HOST` at the new broker. **Blocked:** the broker isn't reachable from outside the cluster yet (see below).
 4. Power it on. It appears on the dashboard by itself.
 
 ## Left / blocked: you decide
@@ -40,7 +41,8 @@ Also tested: bad JSON, a non-object payload and a bad device ID are logged and d
   (c) a TCP entry in ingress-nginx (changes a shared controller);
   (d) keep ngrok in front of `mosquitto`.
   I'd pick (a).
-- **The firmware's port URL uses https.** There's no TLS on the new ingress, because adding it means touching cert-manager. Either add a Certificate/issuer or switch the firmware to http.
+- **Port lookup over HTTPS works now:** set `MQTT_PORT_URL` to `https://new-nodered.adityabn.my.id/getngrokport`. The tunnel only carries HTTP, so the broker itself still needs one of the options above.
+- **Security:** the cloudflared Deployment in `workload01-n2lws-pj5hl` has the tunnel token as a plain container argument, so anyone who can read Deployments there can see it. Consider moving it to a Secret (`TUNNEL_TOKEN` env) and rotating it. I didn't change it.
 - **PR:** open it yourself: https://github.com/Aditya-BN/vibecoded-TA-revisit/compare/main...claude/npk-vibecoded-rewrite-20ognj
 - **Firmware change not compiled here.** CI (`compile.yml`) will check it on push. Please look at the run.
 - Readings that arrive while Postgres is down are dropped (QoS 0, no buffer).

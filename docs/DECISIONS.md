@@ -64,3 +64,10 @@ Each entry: **what I chose** / *why*.
 
 ## Secrets
 - **`deploy/k8s/make-secrets.sh` generates random passwords straight into Kubernetes Secrets and never overwrites existing ones.** *Nothing secret is in git; reruns are safe.*
+
+## Public URL (added 12 Nov, on request)
+- **`https://new-nodered.adityabn.my.id` → Node-RED, via the existing Cloudflare Tunnel "Lab Kantor Helios" (cloudflared in `workload01-n2lws-pj5hl`), routed straight to `http://nodered.agrisoil-dev.svc.cluster.local:1880`.**
+  *Same pattern as the tunnel's other routes (psst, lovematch, test-webapp): no new Ingress, LB or cert, HTTPS comes from Cloudflare.*
+- **Changed in Cloudflare, not in git:** one ingress rule added before the catch-all 404 (tunnel config v5 → v6) and a proxied CNAME `new-nodered` → `<tunnel-id>.cfargotunnel.com`. Nothing else in the tunnel or zone was touched.
+  *Rollback: remove that ingress rule (`cf tunnels config get/update`) and delete the DNS record `new-nodered.adityabn.my.id`.*
+- **Only Node-RED is public; the dashboard stays internal.** *That's what was asked; the dashboard has no login for viewing.*

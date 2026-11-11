@@ -1,0 +1,106 @@
+[
+  {
+    "id": "agri_tab",
+    "type": "tab",
+    "label": "Agrisoil dummy device",
+    "disabled": false,
+    "info": "Pretends to be the agrisoil ESP32. Publishes the same MQTT topics and payloads as agrisoil/send_mqtt.ino, and serves the ngrok port lookup."
+  },
+  {
+    "id": "agri_tick",
+    "type": "inject",
+    "z": "agri_tab",
+    "name": "every 10 s",
+    "props": [],
+    "repeat": "10",
+    "crontab": "",
+    "once": true,
+    "onceDelay": "1",
+    "topic": "",
+    "x": 130,
+    "y": 80,
+    "wires": [["agri_fake"]]
+  },
+  {
+    "id": "agri_fake",
+    "type": "function",
+    "z": "agri_tab",
+    "name": "fake agrisoil reading",
+    "func": "// Random walk around realistic soil values, so charts look alive.\n// Ranges match the firmware's calibration clamps.\nconst BASE_LAT = env.get('AGRI_LAT') || -6.200000; // set to your field\nconst BASE_LNG = env.get('AGRI_LNG') || 106.816666;\n\nlet s = context.get('s') || { n: 200, p: 15, k: 120, ph: 6.5, moist: 50, lat: Number(BASE_LAT), lng: Number(BASE_LNG) };\n\nfunction walk(v, step, min, max) {\n    v += (Math.random() * 2 - 1) * step;\n    return Math.min(max, Math.max(min, v));\n}\n\ns.n = walk(s.n, 10, 60, 350);\ns.p = walk(s.p, 1, 5, 30);\ns.k = walk(s.k, 5, 70, 170);\ns.ph = walk(s.ph, 0.05, 5.0, 8.0);\ns.moist = walk(s.moist, 2, 20, 90);\ns.lat = walk(s.lat, 0.00002, s.lat - 0.001, s.lat + 0.001);\ns.lng = walk(s.lng, 0.00002, s.lng - 0.001, s.lng + 0.001);\ncontext.set('s', s);\n\n// Raw ADC counts, back-calculated from the ADS1115 calibration.\nconst npk1 = Math.round((46510 - s.n) / 8.1731);\nconst npk2 = npk1 + Math.round(Math.random() * 40 - 20);\nconst moistRaw = Math.round(11940 - (s.moist / 100) * (11940 - 4680));\nconst phRaw = Math.round(300 + Math.random() * 50);\n\nconst gpsValid = Math.random() > 0.1; // 10% of readings without a GPS fix\n\nconst out = [\n    { topic: 'agrisoil/val/moist', payload: s.moist.toFixed(2) },\n    { topic: 'agrisoil/val/ph', payload: s.ph.toFixed(2) },\n    { topic: 'agrisoil/val/nit', payload: s.n.toFixed(2) },\n    { topic: 'agrisoil/val/phos', payload: s.p.toFixed(2) },\n    { topic: 'agrisoil/val/kal', payload: s.k.toFixed(2) },\n    { topic: 'agrisoil/raw/moist', payload: String(moistRaw) },\n    { topic: 'agrisoil/raw/ph', payload: String(phRaw) },\n    { topic: 'agrisoil/raw/npk1', payload: String(npk1) },\n    { topic: 'agrisoil/raw/npk2', payload: String(npk2) }\n];\nif (gpsValid) {\n    out.push({ topic: 'agrisoil/loc/lat', payload: s.lat.toFixed(6) });\n    out.push({ topic: 'agrisoil/loc/lng', payload: s.lng.toFixed(6) });\n}\nreturn [out];\n",
+    "outputs": 1,
+    "x": 340,
+    "y": 80,
+    "wires": [["agri_mqtt_out", "agri_debug"]]
+  },
+  {
+    "id": "agri_mqtt_out",
+    "type": "mqtt out",
+    "z": "agri_tab",
+    "name": "to broker",
+    "topic": "",
+    "qos": "0",
+    "retain": "false",
+    "broker": "agri_broker",
+    "x": 560,
+    "y": 60,
+    "wires": []
+  },
+  {
+    "id": "agri_debug",
+    "type": "debug",
+    "z": "agri_tab",
+    "name": "what was sent",
+    "active": false,
+    "tosidebar": true,
+    "complete": "true",
+    "x": 570,
+    "y": 110,
+    "wires": []
+  },
+  {
+    "id": "agri_port_in",
+    "type": "http in",
+    "z": "agri_tab",
+    "name": "",
+    "url": "/getngrokport",
+    "method": "get",
+    "x": 150,
+    "y": 200,
+    "wires": [["agri_port_fn"]]
+  },
+  {
+    "id": "agri_port_fn",
+    "type": "function",
+    "z": "agri_tab",
+    "name": "answer MQTT port",
+    "func": "// The ESP32 expects plain text: just the port number.\n// Real setup: today's ngrok TCP port. Local test: the broker's port.\nmsg.payload = String(global.get('ngrokPort') || env.get('AGRI_MQTT_PORT') || 1883);\nmsg.headers = { 'Content-Type': 'text/plain' };\nreturn msg;\n",
+    "outputs": 1,
+    "x": 360,
+    "y": 200,
+    "wires": [["agri_port_out"]]
+  },
+  {
+    "id": "agri_port_out",
+    "type": "http response",
+    "z": "agri_tab",
+    "name": "",
+    "statusCode": "200",
+    "headers": {},
+    "x": 560,
+    "y": 200,
+    "wires": []
+  },
+  {
+    "id": "agri_broker",
+    "type": "mqtt-broker",
+    "name": "agrisoil broker",
+    "broker": "localhost",
+    "port": "1883",
+    "clientid": "Agrisoil_dummy",
+    "autoConnect": true,
+    "usetls": false,
+    "protocolVersion": "4",
+    "keepalive": "60",
+    "cleansession": true
+  }
+]

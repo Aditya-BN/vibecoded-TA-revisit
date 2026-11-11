@@ -1,0 +1,21 @@
+# Dashboard code as ConfigMaps (no image registry needed).
+# Included from deploy/k8s/kustomization.yaml; the Deployment lives there.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+generatorOptions:
+  labels:
+    app.kubernetes.io/part-of: agrisoil
+configMapGenerator:
+  - name: dashboard-app
+    files:
+      - server.js
+      - package.json
+      - package-lock.json
+  - name: dashboard-public
+    files:
+      - public/index.html
+      - public/device.html
+      - public/app.css
+      - public/common.js
+      - public/overview.js
+      - public/device.js

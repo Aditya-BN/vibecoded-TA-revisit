@@ -1,0 +1,16 @@
+# Node-RED code: settings, init script and flows (git is the source of truth).
+# Included from deploy/k8s/kustomization.yaml.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+generatorOptions:
+  labels:
+    app.kubernetes.io/part-of: agrisoil
+configMapGenerator:
+  - name: nodered-config
+    files:
+      - settings.js
+      - init.sh
+  - name: nodered-flows
+    files:
+      - flows/dummy-sensors.json
+      - flows/ingest.json

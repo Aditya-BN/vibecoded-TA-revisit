@@ -114,7 +114,7 @@ bool connectMqtt()
 {
   for (int attempt = 1; attempt <= MQTT_CONNECT_ATTEMPTS; attempt++)
   {
-    if (client.connect(MQTT_CLIENT_ID)) return true;
+    if (client.connect(MQTT_CLIENT_ID, mqttUser, mqttPassword)) return true;
 
     Serial.print("   MQTT gagal, rc=");
     Serial.print(client.state());

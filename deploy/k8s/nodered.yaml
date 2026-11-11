@@ -1,0 +1,106 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: nodered
+  labels: {app.kubernetes.io/name: nodered}
+spec:
+  serviceName: nodered
+  replicas: 1   # one ingest consumer; see docs/DECISIONS.md before scaling
+  selector:
+    matchLabels: {app.kubernetes.io/name: nodered}
+  template:
+    metadata:
+      labels: {app.kubernetes.io/name: nodered}
+    spec:
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        runAsNonRoot: true
+        seccompProfile: {type: RuntimeDefault}
+      initContainers:
+        - name: prepare
+          image: nodered/node-red:4.1.1
+          command: [sh, /config/init.sh]
+          env: &env
+            - {name: EXTRA_NODES, value: "node-red-contrib-postgresql@0.16.2"}
+            - {name: npm_config_cache, value: /tmp/.npm}
+            - {name: TZ, value: Asia/Jakarta}
+            - {name: MQTT_USER, value: nodered}
+            - name: MQTT_PASSWORD
+              valueFrom: {secretKeyRef: {name: mosquitto-auth, key: nodered-password}}
+            - {name: PGHOST, value: postgres}
+            - {name: PGPORT, value: "5432"}
+            - {name: PGDATABASE, value: agrisoil}
+            - {name: PGUSER, value: agrisoil}
+            - name: PGPASSWORD
+              valueFrom: {secretKeyRef: {name: postgres-auth, key: agrisoil-password}}
+            - name: NR_ADMIN_USER
+              valueFrom: {secretKeyRef: {name: nodered-auth, key: admin-user}}
+            - name: NR_ADMIN_PASSWORD
+              valueFrom: {secretKeyRef: {name: nodered-auth, key: admin-password}}
+            - name: NR_HTTP_USER
+              valueFrom: {secretKeyRef: {name: nodered-auth, key: http-user}}
+            - name: NR_HTTP_PASSWORD
+              valueFrom: {secretKeyRef: {name: nodered-auth, key: http-password}}
+          envFrom: &envFrom
+            - configMapRef: {name: nodered-env}
+          resources:
+            requests: {cpu: 50m, memory: 128Mi}
+            limits: {memory: 512Mi}
+          securityContext: &sc
+            allowPrivilegeEscalation: false
+            capabilities: {drop: [ALL]}
+          volumeMounts: &mounts
+            - {name: data, mountPath: /data}
+            - {name: run, mountPath: /run/nodered}
+            - {name: tmp, mountPath: /tmp}
+            - {name: config, mountPath: /config}
+            - {name: flows, mountPath: /flows}
+      containers:
+        - name: nodered
+          image: nodered/node-red:4.1.1
+          ports:
+            - {name: http, containerPort: 1880}
+          env: *env
+          envFrom: *envFrom
+          readinessProbe:
+            httpGet: {path: /, port: http}
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: {path: /, port: http}
+            initialDelaySeconds: 30
+            periodSeconds: 20
+          resources:
+            requests: {cpu: 50m, memory: 128Mi}
+            limits: {memory: 512Mi}
+          securityContext: *sc
+          volumeMounts: *mounts
+      volumes:
+        - name: run
+          emptyDir: {medium: Memory, sizeLimit: 16Mi}
+        - name: tmp
+          emptyDir: {sizeLimit: 256Mi}
+        - name: config
+          configMap: {name: nodered-config}
+        - name: flows
+          configMap: {name: nodered-flows}
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: [ReadWriteOnce]
+        resources:
+          requests:
+            storage: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nodered
+  labels: {app.kubernetes.io/name: nodered}
+spec:
+  type: ClusterIP
+  selector: {app.kubernetes.io/name: nodered}
+  ports:
+    - {name: http, port: 1880, targetPort: http}

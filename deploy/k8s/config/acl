@@ -1,0 +1,7 @@
+# nodered: dummy sensors + ingest + debugging
+user nodered
+topic readwrite agrisoil/#
+
+# device: shared by the real ESP32 sensors, publish only
+user device
+topic write agrisoil/#

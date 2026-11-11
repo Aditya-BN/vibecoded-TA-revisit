@@ -1,0 +1,18 @@
+{
+  "name": "agrisoil-dashboard",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Multi-sensor agrisoil dashboard: overview + per-sensor pages, reads PostgreSQL.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "chart.js": "^4.5.0",
+    "leaflet": "^1.9.4",
+    "pg": "^8.16.0"
+  }
+}

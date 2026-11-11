@@ -18,6 +18,12 @@
 #define httpsUname "uname"
 #define httpsPassword "password"
 
+//=========================== MQTT BROKER LOGIN ===========================
+// The Kubernetes broker (deploy/k8s) refuses anonymous clients.
+// Use the "device" login from the mosquitto-auth Secret.
+#define mqttUser "device"
+#define mqttPassword "password"
+
 //=========================== FIREBASE ===========================
 #define firebaseDatabaseUrl "https://your-project-default-rtdb.asia-southeast1.firebasedatabase.app/"
 #define firebaseDatabaseSecret "your-legacy-database-secret"

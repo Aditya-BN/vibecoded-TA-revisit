@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sensor · Agrisoil</title>
+  <link rel="stylesheet" href="/vendor/leaflet/leaflet.css">
+  <link rel="stylesheet" href="/app.css">
+</head>
+<body>
+  <header>
+    <h1><a href="/">🌱 Agrisoil</a> / <span id="title">…</span></h1>
+    <span id="state"></span>
+    <button class="btn" id="rename" title="Ganti nama tampilan (login admin)">✎ Ganti nama</button>
+    <span class="spacer"></span>
+    <span class="updated" id="updated"></span>
+  </header>
+  <main>
+    <div id="missing" class="empty" hidden>Sensor ini belum pernah kirim data.</div>
+    <div id="content">
+      <h2>Nilai terakhir</h2>
+      <div class="big"><div class="values" id="latest"></div></div>
+      <div class="meta" id="meta"></div>
+
+      <div class="toolbar">
+        <h2>Riwayat</h2>
+        <div class="seg" id="ranges">
+          <button data-range="1h">1 jam</button>
+          <button data-range="24h">24 jam</button>
+          <button data-range="7d">7 hari</button>
+        </div>
+        <span class="note" id="bucket"></span>
+      </div>
+      <div class="charts" id="charts"></div>
+
+      <details id="raw">
+        <summary>Raw ADC (untuk kalibrasi)</summary>
+        <table>
+          <thead><tr><th>Kanal</th><th>Nilai terakhir</th></tr></thead>
+          <tbody id="raw-latest"></tbody>
+        </table>
+        <div class="chart-card"><h3>Raw ADC <small>(counts)</small></h3><div class="chart-box"><canvas id="raw-chart"></canvas></div></div>
+      </details>
+
+      <h2>Lokasi</h2>
+      <div class="map small" id="map"></div>
+      <p class="note" id="map-note"></p>
+    </div>
+  </main>
+  <script src="/vendor/leaflet/leaflet.js"></script>
+  <script src="/vendor/chart.umd.min.js"></script>
+  <script src="/common.js"></script>
+  <script src="/device.js"></script>
+</body>
+</html>

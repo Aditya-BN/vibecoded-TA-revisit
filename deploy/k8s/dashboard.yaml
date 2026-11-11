@@ -1,0 +1,108 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dashboard
+  labels: {app.kubernetes.io/name: dashboard}
+spec:
+  replicas: 2   # stateless, Postgres is the only state
+  strategy:
+    type: RollingUpdate
+    rollingUpdate: {maxUnavailable: 0, maxSurge: 1}
+  selector:
+    matchLabels: {app.kubernetes.io/name: dashboard}
+  template:
+    metadata:
+      labels: {app.kubernetes.io/name: dashboard}
+    spec:
+      securityContext:
+        runAsUser: 1000      # "node" in the official image
+        runAsGroup: 1000
+        runAsNonRoot: true
+        seccompProfile: {type: RuntimeDefault}
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels: {app.kubernetes.io/name: dashboard}
+      # No image registry: stock node image + app code from ConfigMaps, npm ci at start.
+      initContainers:
+        - name: install
+          image: node:22.21-alpine
+          command: [sh, -c]
+          args:
+            - |
+              set -eu
+              cp -L /src/app/* /app/
+              mkdir -p /app/public
+              cp -L /src/public/* /app/public/
+              cd /app && npm ci --omit=dev --no-audit --no-fund
+          env:
+            - {name: npm_config_cache, value: /tmp/.npm}
+          resources:
+            requests: {cpu: 50m, memory: 64Mi}
+            limits: {memory: 512Mi}
+          securityContext: &sc
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
+          volumeMounts:
+            - {name: app, mountPath: /app}
+            - {name: tmp, mountPath: /tmp}
+            - {name: src-app, mountPath: /src/app}
+            - {name: src-public, mountPath: /src/public}
+      containers:
+        - name: dashboard
+          image: node:22.21-alpine
+          workingDir: /app
+          command: [node, server.js]
+          ports:
+            - {name: http, containerPort: 8080}
+          env:
+            - {name: PORT, value: "8080"}
+            - {name: PGHOST, value: postgres}
+            - {name: PGPORT, value: "5432"}
+            - {name: PGDATABASE, value: agrisoil}
+            - {name: PGUSER, value: dashboard}
+            - name: PGPASSWORD
+              valueFrom: {secretKeyRef: {name: postgres-auth, key: dashboard-password}}
+            - name: ADMIN_USER
+              valueFrom: {secretKeyRef: {name: dashboard-auth, key: admin-user}}
+            - name: ADMIN_PASSWORD
+              valueFrom: {secretKeyRef: {name: dashboard-auth, key: admin-password}}
+          envFrom:
+            - configMapRef: {name: dashboard-env}
+          readinessProbe:
+            httpGet: {path: /healthz, port: http}
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: {path: /livez, port: http}
+            initialDelaySeconds: 10
+            periodSeconds: 20
+          resources:
+            requests: {cpu: 20m, memory: 48Mi}
+            limits: {memory: 256Mi}
+          securityContext: *sc
+          volumeMounts:
+            - {name: app, mountPath: /app}
+            - {name: tmp, mountPath: /tmp}
+      volumes:
+        - name: app
+          emptyDir: {sizeLimit: 128Mi}
+        - name: tmp
+          emptyDir: {sizeLimit: 128Mi}
+        - name: src-app
+          configMap: {name: dashboard-app}
+        - name: src-public
+          configMap: {name: dashboard-public}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dashboard
+  labels: {app.kubernetes.io/name: dashboard}
+spec:
+  type: ClusterIP
+  selector: {app.kubernetes.io/name: dashboard}
+  ports:
+    - {name: http, port: 80, targetPort: http}

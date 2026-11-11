@@ -1,0 +1,35 @@
+# Reuses the cluster's existing ingress-nginx (10.12.135.205). nip.io names need no DNS change.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: dashboard
+  labels: {app.kubernetes.io/name: dashboard}
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: agrisoil.10.12.135.205.nip.io
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service: {name: dashboard, port: {name: http}}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: nodered
+  labels: {app.kubernetes.io/name: nodered}
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"   # editor websocket
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: nodered-agrisoil.10.12.135.205.nip.io
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service: {name: nodered, port: {name: http}}

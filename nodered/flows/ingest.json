@@ -1,0 +1,140 @@
+[
+  {
+    "id": "ingest_tab",
+    "type": "tab",
+    "label": "Agrisoil ingest",
+    "disabled": false,
+    "info": "agrisoil/+/reading -> PostgreSQL (devices + readings).\nA new DEVICE_ID is added to `devices` on its first reading, no config needed.\nSingle Node-RED replica, so a plain subscription. With more replicas use $share/ingest/agrisoil/+/reading."
+  },
+  {
+    "id": "ingest_mqtt_in",
+    "type": "mqtt in",
+    "z": "ingest_tab",
+    "name": "agrisoil/+/reading",
+    "topic": "agrisoil/+/reading",
+    "qos": "0",
+    "datatype": "utf8",
+    "broker": "ingest_broker",
+    "nl": false,
+    "rap": true,
+    "rh": 0,
+    "inputs": 0,
+    "x": 150,
+    "y": 100,
+    "wires": [
+      [
+        "ingest_validate"
+      ]
+    ]
+  },
+  {
+    "id": "ingest_validate",
+    "type": "function",
+    "z": "ingest_tab",
+    "name": "validate + map",
+    "func": "// Turns one agrisoil/<id>/reading message into SQL parameters.\n// Anything malformed is logged and dropped, the flow never crashes.\nconst m = /^agrisoil\\/([A-Za-z0-9_]{1,64})\\/reading$/.exec(msg.topic || '');\nif (!m) {\n    node.warn('topic ditolak: ' + msg.topic);\n    return null;\n}\nconst id = m[1]; // the topic is the source of truth for DEVICE_ID\n\nlet r;\ntry {\n    r = typeof msg.payload === 'string' ? JSON.parse(msg.payload) : msg.payload;\n} catch (e) {\n    node.warn('JSON rusak dari ' + id + ': ' + e.message);\n    return null;\n}\nif (!r || typeof r !== 'object' || Array.isArray(r)) {\n    node.warn('payload bukan object dari ' + id);\n    return null;\n}\nif (r.device && r.device !== id) {\n    node.warn('device \"' + r.device + '\" beda dengan topic \"' + id + '\", pakai topic');\n}\n\nfunction num(v) {\n    if (typeof v === 'number') return isFinite(v) ? v : null;\n    if (typeof v === 'string' && v.trim() !== '' && isFinite(Number(v))) return Number(v);\n    return null;\n}\nfunction int(v) {\n    const x = num(v);\n    return x === null ? null : Math.round(x);\n}\n\n// waktu is \"YYYY-MM-DD HH:MM:SS\" in WIB (UTC+7), or \"unknown\" when NTP failed.\nconst now = new Date();\nlet ts = now;\nif (typeof r.waktu === 'string' && /^\\d{4}-\\d{2}-\\d{2}[ T]\\d{2}:\\d{2}:\\d{2}$/.test(r.waktu)) {\n    const t = new Date(r.waktu.replace(' ', 'T') + '+07:00');\n    // ignore clocks that are obviously wrong (never synced, or in the future)\n    if (!isNaN(t) && t.getUTCFullYear() >= 2020 && t - now < 5 * 60 * 1000) ts = t;\n}\n\nlet lat = num(r.lat), lng = num(r.lng);\nif (lat === null || lng === null || Math.abs(lat) > 90 || Math.abs(lng) > 180 || (lat === 0 && lng === 0)) {\n    lat = null;\n    lng = null;\n}\n\nmsg.params = [\n    id, ts.toISOString(),\n    num(r.n), num(r.p), num(r.k), num(r.ph), num(r.moist),\n    int(r.npk1_raw), int(r.npk2_raw), int(r.moist_raw), int(r.ph_raw),\n    typeof r.in_soil === 'boolean' ? r.in_soil : null,\n    lat, lng\n];\nreturn msg;\n",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 380,
+    "y": 100,
+    "wires": [
+      [
+        "ingest_pg"
+      ]
+    ]
+  },
+  {
+    "id": "ingest_pg",
+    "type": "postgresql",
+    "z": "ingest_tab",
+    "name": "upsert device + insert reading",
+    "query": "WITH dev AS (\n  INSERT INTO devices (id, name, first_seen, last_seen, last_lat, last_lng)\n  VALUES ($1, $1, LEAST($2::timestamptz, now()), LEAST($2::timestamptz, now()), $13::float8, $14::float8)\n  ON CONFLICT (id) DO UPDATE SET\n    last_seen = GREATEST(devices.last_seen, EXCLUDED.last_seen),\n    last_lat  = COALESCE(EXCLUDED.last_lat, devices.last_lat),\n    last_lng  = COALESCE(EXCLUDED.last_lng, devices.last_lng)\n  RETURNING id\n)\nINSERT INTO readings (device_id, ts, n, p, k, ph, moist,\n                      npk1_raw, npk2_raw, moist_raw, ph_raw, in_soil, lat, lng)\nSELECT id, $2::timestamptz, $3::real, $4::real, $5::real, $6::real, $7::real,\n       $8::int, $9::int, $10::int, $11::int, $12::boolean, $13::float8, $14::float8\nFROM dev\nON CONFLICT (device_id, ts) DO NOTHING;",
+    "postgreSQLConfig": "ingest_pgconf",
+    "split": false,
+    "rowsPerMsg": 1,
+    "outputs": 1,
+    "x": 640,
+    "y": 100,
+    "wires": [
+      []
+    ]
+  },
+  {
+    "id": "ingest_catch",
+    "type": "catch",
+    "z": "ingest_tab",
+    "name": "any error",
+    "scope": null,
+    "uncaught": false,
+    "x": 150,
+    "y": 180,
+    "wires": [
+      [
+        "ingest_err"
+      ]
+    ]
+  },
+  {
+    "id": "ingest_err",
+    "type": "debug",
+    "z": "ingest_tab",
+    "name": "ingest error",
+    "active": true,
+    "tosidebar": true,
+    "console": true,
+    "tostatus": true,
+    "complete": "error",
+    "targetType": "msg",
+    "statusVal": "error.message",
+    "statusType": "msg",
+    "x": 380,
+    "y": 180,
+    "wires": []
+  },
+  {
+    "id": "ingest_broker",
+    "type": "mqtt-broker",
+    "name": "agrisoil broker (ingest)",
+    "broker": "mosquitto",
+    "port": "1883",
+    "clientid": "",
+    "autoConnect": true,
+    "usetls": false,
+    "protocolVersion": "4",
+    "keepalive": "60",
+    "cleansession": true,
+    "autoUnsubscribe": true,
+    "birthTopic": "",
+    "closeTopic": "",
+    "willTopic": ""
+  },
+  {
+    "id": "ingest_pgconf",
+    "type": "postgreSQLConfig",
+    "name": "agrisoil db",
+    "host": "PGHOST",
+    "hostFieldType": "env",
+    "port": "PGPORT",
+    "portFieldType": "env",
+    "database": "PGDATABASE",
+    "databaseFieldType": "env",
+    "ssl": "false",
+    "sslFieldType": "bool",
+    "applicationName": "nodered-ingest",
+    "applicationNameType": "str",
+    "max": "5",
+    "maxFieldType": "num",
+    "idle": "10000",
+    "idleFieldType": "num",
+    "connectionTimeout": "10000",
+    "connectionTimeoutFieldType": "num",
+    "userFieldType": "env",
+    "userEnv": "PGUSER",
+    "passwordFieldType": "env",
+    "passwordEnv": "PGPASSWORD"
+  }
+]

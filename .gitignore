@@ -1,0 +1,8 @@
+# Compiled source #
+###################
+build/
+*.bin
+
+# Secret credential #
+#####################
+secret.h

@@ -51,4 +51,5 @@ jobs:
           grep -nE '^#define (READ_METHOD|SEND_TO|USE_|OLED_HEIGHT)' agrisoil.ino
 
       - name: Compile
-        run: arduino-cli compile --fqbn esp32:esp32:esp32 --warnings default agrisoil
+        # Huge APP partition: Firebase + TLS is too big for the default 1.2 MB on core 3.x
+        run: arduino-cli compile --fqbn esp32:esp32:esp32:PartitionScheme=huge_app --warnings default agrisoil

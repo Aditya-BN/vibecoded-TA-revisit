@@ -8,60 +8,66 @@
 #include <HTTPClient.h>
 #include <PubSubClient.h>
 
-const char *MQTT_HOST = "0.tcp.ap.ngrok.io"; // host only, no "tcp://"
-const uint16_t MQTT_FALLBACK_PORT = 12115;   // used when Node-RED doesn't answer
-const char *MQTT_PORT_LOOKUP_URL = "https://nodered.agrisoil.my.id/getngrokport";
-const char *MQTT_CLIENT_ID = "Agrisoil_1";
-const uint8_t MQTT_CONNECT_ATTEMPTS = 3;
+#define MQTT_HOST "0.tcp.ap.ngrok.io" // host only, no "tcp://"
+#define MQTT_FALLBACK_PORT 12115      // used when Node-RED doesn't answer
+#define MQTT_PORT_URL "https://nodered.agrisoil.my.id/getngrokport"
+#define MQTT_CLIENT_ID "Agrisoil_1"
+#define MQTT_CONNECT_ATTEMPTS 3
 
-WiFiClient mqttNetwork;
-PubSubClient mqtt(mqttNetwork);
+WiFiClient espClient;
+PubSubClient client(espClient);
 
 void beginMqtt()
 {
-  uint16_t port = fetchMqttPort();
-  mqtt.setServer(MQTT_HOST, port);
-  Serial.printf("=> MQTT broker: %s:%u\n", MQTT_HOST, port);
+  int port = fetchMqttPort();
+  client.setServer(MQTT_HOST, port);
+
+  Serial.print("=> MQTT broker: ");
+  Serial.print(MQTT_HOST);
+  Serial.print(":");
+  Serial.println(port);
 }
 
-void sendToMqtt(const SoilReading &soil, const GpsFix &where)
+void sendToMqtt()
 {
   Serial.println("=> Kirim ke MQTT");
   if (!connectMqtt()) return;
 
   //*********************** calibrated values
-  publishNumber("agrisoil/val/moist", soil.moisture);
-  publishNumber("agrisoil/val/ph", soil.ph);
-  publishNumber("agrisoil/val/nit", soil.nitrogen);
-  publishNumber("agrisoil/val/phos", soil.phosphorus);
-  publishNumber("agrisoil/val/kal", soil.potassium);
+  client.publish("agrisoil/val/moist", String(nilaiMoist).c_str());
+  client.publish("agrisoil/val/ph", String(nilaiPH).c_str());
+  client.publish("agrisoil/val/nit", String(nilaiN).c_str());
+  client.publish("agrisoil/val/phos", String(nilaiP).c_str());
+  client.publish("agrisoil/val/kal", String(nilaiK).c_str());
 
   //*********************** raw values, for calibration
-  publishNumber("agrisoil/raw/moist", soil.moistureRaw);
-  publishNumber("agrisoil/raw/ph", soil.phRaw);
-  publishNumber("agrisoil/raw/npk1", soil.npkRaw);
-  publishNumber("agrisoil/raw/npk2", soil.npk2Raw);
+  client.publish("agrisoil/raw/moist", String(moistADC).c_str());
+  client.publish("agrisoil/raw/ph", String(phADC).c_str());
+  client.publish("agrisoil/raw/npk1", String(npk1ADC).c_str());
+  client.publish("agrisoil/raw/npk2", String(npk2ADC).c_str());
 
   //*********************** location
-  if (where.valid)
+  if (gpsValid)
   {
-    publishNumber("agrisoil/loc/lat", where.latitude, 6);
-    publishNumber("agrisoil/loc/lng", where.longitude, 6);
+    client.publish("agrisoil/loc/lat", String(latitude, 6).c_str());
+    client.publish("agrisoil/loc/lng", String(longitude, 6).c_str());
   }
 
   // Let the last packets leave before we hang up (or fall asleep).
-  mqtt.loop();
+  client.loop();
   delay(100);
-  mqtt.disconnect();
+  client.disconnect();
 }
 
 bool connectMqtt()
 {
-  for (uint8_t attempt = 1; attempt <= MQTT_CONNECT_ATTEMPTS; attempt++)
+  for (int attempt = 1; attempt <= MQTT_CONNECT_ATTEMPTS; attempt++)
   {
-    if (mqtt.connect(MQTT_CLIENT_ID)) return true;
+    if (client.connect(MQTT_CLIENT_ID)) return true;
 
-    Serial.printf("   MQTT gagal (rc=%d), coba lagi %u/%u\n", mqtt.state(), attempt, MQTT_CONNECT_ATTEMPTS);
+    Serial.print("   MQTT gagal, rc=");
+    Serial.print(client.state());
+    Serial.println(" coba lagi 2 detik");
     delay(2000);
   }
 
@@ -69,36 +75,24 @@ bool connectMqtt()
   return false;
 }
 
-void publishNumber(const char *topic, double value, uint8_t decimals)
-{
-  char text[20];
-  dtostrf(value, 1, decimals, text);
-  mqtt.publish(topic, text);
-}
-
-void publishNumber(const char *topic, double value)
-{
-  publishNumber(topic, value, 2);
-}
-
 //=========================== NGROK PORT ===========================
-uint16_t fetchMqttPort()
+int fetchMqttPort()
 {
   Serial.println("=> Nanya port MQTT ke Node-RED...");
 
-  WiFiClientSecure tls;
-  tls.setInsecure(); // no certificate pinning, it's a soil sensor not a bank
+  WiFiClientSecure secureClient;
+  secureClient.setInsecure(); // no certificate check, it's a soil sensor not a bank
 
   HTTPClient http;
-  http.begin(tls, MQTT_PORT_LOOKUP_URL);
+  http.begin(secureClient, MQTT_PORT_URL);
   http.setAuthorization(httpsUname, httpsPassword);
 
-  uint16_t port = MQTT_FALLBACK_PORT;
+  int port = MQTT_FALLBACK_PORT;
   int httpCode = http.GET();
 
   if (httpCode == HTTP_CODE_OK)
   {
-    long answer = http.getString().toInt();
+    int answer = http.getString().toInt();
     if (answer > 0 && answer <= 65535)
     {
       port = answer;
@@ -106,7 +100,9 @@ uint16_t fetchMqttPort()
   }
   else
   {
-    Serial.printf("   Gagal (HTTP %d), pakai port cadangan\n", httpCode);
+    Serial.print("   Gagal, HTTP ");
+    Serial.print(httpCode);
+    Serial.println(", pakai port cadangan");
   }
 
   http.end();

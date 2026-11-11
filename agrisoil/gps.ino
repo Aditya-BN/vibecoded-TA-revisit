@@ -5,11 +5,10 @@
 
 #include <TinyGPSPlus.h>
 
-const uint8_t GPS_RX_PIN = 16;
-const uint8_t GPS_TX_PIN = 17;
-const uint32_t GPS_BAUD = 9600;
-
-const uint32_t GPS_MAX_AGE_MS = 5000; // older than this = we lost the sky
+#define GPS_RX_PIN 16
+#define GPS_TX_PIN 17
+#define GPS_BAUD 9600
+#define GPS_MAX_AGE_MS 5000 // older than this = we lost the sky
 
 TinyGPSPlus gps;
 
@@ -29,14 +28,16 @@ void feedGps()
   }
 }
 
-void waitForGpsFix(uint32_t timeoutMs)
+void waitForGpsFix()
 {
   Serial.println("=> Nyari satelit...");
 
-  uint32_t startedAt = millis();
-  while (!currentGpsFix().valid && millis() - startedAt < timeoutMs)
+  unsigned long startedAt = millis();
+  while (millis() - startedAt < GPS_FIX_TIMEOUT_MS)
   {
     feedGps();
+    readGps();
+    if (gpsValid) return;
     delay(10);
   }
 
@@ -46,26 +47,19 @@ void waitForGpsFix(uint32_t timeoutMs)
   }
 }
 
-GpsFix currentGpsFix()
+void readGps()
 {
-  GpsFix fix;
-  fix.valid = gps.location.isValid() && gps.location.age() < GPS_MAX_AGE_MS;
-  fix.latitude = gps.location.lat();
-  fix.longitude = gps.location.lng();
-  fix.satellites = gps.satellites.value();
-  return fix;
+  gpsValid = gps.location.isValid() && gps.location.age() < GPS_MAX_AGE_MS;
+  latitude = gps.location.lat();
+  longitude = gps.location.lng();
+  satellites = gps.satellites.value();
 }
 
 #else
 
 void beginGps() {}
 void feedGps() {}
-void waitForGpsFix(uint32_t timeoutMs) {}
-
-GpsFix currentGpsFix()
-{
-  GpsFix noFix = {};
-  return noFix;
-}
+void waitForGpsFix() {}
+void readGps() { gpsValid = false; }
 
 #endif

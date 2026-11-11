@@ -5,111 +5,145 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 
-Adafruit_SSD1306 oled(OLED_WIDTH, OLED_HEIGHT, &Wire, -1); // -1 = no reset pin
-bool oledAvailable = false;
+#define PAGE_FLIP_MS 3000 // small screen only
 
-const uint16_t PAGE_FLIP_MS = 3000; // small screen only
+Adafruit_SSD1306 display(OLED_WIDTH, OLED_HEIGHT, &Wire, -1); // -1 = no reset pin
+bool oledAvailable = false;
 
 void beginDisplay()
 {
-  oledAvailable = oled.begin(SSD1306_SWITCHCAPVCC, OLED_ADDRESS);
+  oledAvailable = display.begin(SSD1306_SWITCHCAPVCC, OLED_ADDRESS);
   if (!oledAvailable)
   {
     Serial.println(F("=> OLED nggak ketemu, lanjut tanpa layar"));
     return;
   }
 
-  oled.setTextColor(SSD1306_WHITE);
-  oled.clearDisplay();
-  oled.display();
+  display.setTextColor(SSD1306_WHITE);
+  display.clearDisplay();
+  display.display();
 }
 
 //=========================== OLED ===========================
-void showMessage(const char *title, const char *detail)
+void showMessage(String title, String detail)
 {
   if (!oledAvailable) return;
 
-  oled.clearDisplay();
-  oled.setTextSize(1);
-  oled.setCursor(0, 0);
-  oled.println(title);
-  oled.setCursor(0, 16);
-  oled.println(detail);
-  oled.display();
+  display.clearDisplay();
+  display.setTextSize(1);
+  display.setCursor(0, 0);
+  display.println(title);
+  display.setCursor(0, 16);
+  display.println(detail);
+  display.display();
 }
 
 // Big screen: both pages stacked.
 // Small screen: NPK first, then pH & moisture (which stays while we sleep).
-void showReading(const SoilReading &soil)
+void showReading()
 {
   if (!oledAvailable) return;
 
-  oled.clearDisplay();
-  oled.setTextSize(2);
+  display.clearDisplay();
+  display.setTextSize(2);
 
   if (OLED_HEIGHT >= 64)
   {
-    drawNpkPage(soil, 0);
-    drawPhMoisturePage(soil, 32);
-    oled.display();
+    drawNPK(0);
+    drawPHMoist(32);
+    display.display();
     return;
   }
 
-  drawNpkPage(soil, 0);
-  oled.display();
+  drawNPK(0);
+  display.display();
   delay(PAGE_FLIP_MS);
 
-  oled.clearDisplay();
-  drawPhMoisturePage(soil, 0);
-  oled.display();
+  display.clearDisplay();
+  drawPHMoist(0);
+  display.display();
 }
 
+// Text size 2 = 16 px tall, so one page is exactly 32 px.
 //  N     P     K
 //  350   12    150
-void drawNpkPage(const SoilReading &soil, int16_t top)
+void drawNPK(int top)
 {
-  drawColumn(0, top, "N", soil.nitrogen, 0, "");
-  drawColumn(45, top, "P", soil.phosphorus, 0, "");
-  drawColumn(90, top, "K", soil.potassium, 0, "");
+  display.setCursor(0, top);
+  display.print("N");
+  display.setCursor(0, top + 16);
+  display.print(nilaiN, 0);
+
+  display.setCursor(45, top);
+  display.print("P");
+  display.setCursor(45, top + 16);
+  display.print(nilaiP, 0);
+
+  display.setCursor(90, top);
+  display.print("K");
+  display.setCursor(90, top + 16);
+  display.print(nilaiK, 0);
 }
 
 //  pH    Moist
 //  6.8   54%
-void drawPhMoisturePage(const SoilReading &soil, int16_t top)
+void drawPHMoist(int top)
 {
-  drawColumn(0, top, "pH", soil.ph, 1, "");
-  drawColumn(60, top, "Moist", soil.moisture, 0, "%");
-}
+  display.setCursor(0, top);
+  display.print("pH");
+  display.setCursor(0, top + 16);
+  display.print(nilaiPH, 1);
 
-// Text size 2 = 16 px tall, so one column is exactly 32 px.
-void drawColumn(int16_t left, int16_t top, const char *label, float value, uint8_t decimals, const char *unit)
-{
-  oled.setCursor(left, top);
-  oled.print(label);
-  oled.setCursor(left, top + 16);
-  oled.print(value, decimals);
-  oled.print(unit);
+  display.setCursor(60, top);
+  display.print("Moist");
+  display.setCursor(60, top + 16);
+  display.print(nilaiMoist, 0);
+  display.print("%");
 }
 
 //=========================== SERIAL ===========================
-void printReading(const SoilReading &soil, const GpsFix &where, const String &when)
+void printReading()
 {
   Serial.println("----------------------------------------");
-  Serial.println("Waktu    : " + when);
+  Serial.println("Waktu    : " + waktu);
 
-  Serial.printf("N        : %.2f ppm\n", soil.nitrogen);
-  Serial.printf("P        : %.2f ppm\n", soil.phosphorus);
-  Serial.printf("K        : %.2f ppm\n", soil.potassium);
-  Serial.printf("pH       : %.2f\n", soil.ph);
-  Serial.printf("Moisture : %.2f %%\n", soil.moisture);
+  Serial.print("N        : ");
+  Serial.print(nilaiN);
+  Serial.println(" ppm");
 
-  Serial.printf("Raw      : npk=%ld npk2=%ld moist=%ld ph=%ld\n",
-                (long)soil.npkRaw, (long)soil.npk2Raw, (long)soil.moistureRaw, (long)soil.phRaw);
+  Serial.print("P        : ");
+  Serial.print(nilaiP);
+  Serial.println(" ppm");
 
-  if (where.valid)
+  Serial.print("K        : ");
+  Serial.print(nilaiK);
+  Serial.println(" ppm");
+
+  Serial.print("pH       : ");
+  Serial.println(nilaiPH);
+
+  Serial.print("Moisture : ");
+  Serial.print(nilaiMoist);
+  Serial.println(" %");
+
+  Serial.print("Raw      : npk1=");
+  Serial.print(npk1ADC);
+  Serial.print(" npk2=");
+  Serial.print(npk2ADC);
+  Serial.print(" moist=");
+  Serial.print(moistADC);
+  Serial.print(" ph=");
+  Serial.println(phADC);
+
+  if (gpsValid)
   {
-    Serial.printf("Lokasi   : %.6f, %.6f (%lu satelit)\n",
-                  where.latitude, where.longitude, (unsigned long)where.satellites);
+    Serial.print("Lokasi   : ");
+    Serial.print(latitude, 6);
+    Serial.print(", ");
+    Serial.print(longitude, 6);
+    Serial.print(" (");
+    Serial.print(satellites);
+    Serial.println(" satelit)");
   }
   else
   {

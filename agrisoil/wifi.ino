@@ -4,7 +4,7 @@
 #include <WiFi.h>
 #include <WiFiMulti.h>
 
-const uint32_t WIFI_TIMEOUT_MS = 10000;
+#define WIFI_TIMEOUT_MS 10000
 
 WiFiMulti wifiMulti;
 
@@ -25,7 +25,7 @@ void beginWifi()
   Serial.println("=> WiFi connected to " + WiFi.SSID());
   Serial.print("   IP address: ");
   Serial.println(WiFi.localIP());
-  showMessage("WiFi connected!", WiFi.localIP().toString().c_str());
+  showMessage("WiFi connected!", WiFi.localIP().toString());
 }
 
 // Already online? Returns right away. Otherwise tries to (re)connect.

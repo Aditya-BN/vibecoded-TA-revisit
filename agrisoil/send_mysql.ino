@@ -5,28 +5,28 @@
 #include <WiFiClientSecure.h>
 #include <HTTPClient.h>
 
-const char *MYSQL_SAVE_URL = "https://sistempemetaan2023.com/dashboard/saveData";
+#define MYSQL_URL "https://sistempemetaan2023.com/dashboard/saveData"
 
-void sendToMysql(const SoilReading &soil, const GpsFix &where)
+void sendToMysql()
 {
   Serial.println("=> Kirim ke MySQL");
 
-  String form = "kelembaban=" + String(soil.moisture) +
-                "&ph=" + String(soil.ph) +
-                "&nilai_n=" + String(soil.nitrogen) +
-                "&nilai_p=" + String(soil.phosphorus) +
-                "&nilai_k=" + String(soil.potassium) +
-                "&latitude=" + String(where.latitude, 6) +
-                "&longitude=" + String(where.longitude, 6);
+  String postData = "kelembaban=" + String(nilaiMoist) +
+                    "&ph=" + String(nilaiPH) +
+                    "&nilai_n=" + String(nilaiN) +
+                    "&nilai_p=" + String(nilaiP) +
+                    "&nilai_k=" + String(nilaiK) +
+                    "&latitude=" + String(latitude, 6) +
+                    "&longitude=" + String(longitude, 6);
 
-  WiFiClientSecure tls;
-  tls.setInsecure();
+  WiFiClientSecure secureClient;
+  secureClient.setInsecure();
 
   HTTPClient http;
-  http.begin(tls, MYSQL_SAVE_URL);
+  http.begin(secureClient, MYSQL_URL);
   http.addHeader("Content-Type", "application/x-www-form-urlencoded");
 
-  int httpCode = http.POST(form);
+  int httpCode = http.POST(postData);
 
   if (httpCode == HTTP_CODE_OK)
   {
@@ -34,11 +34,13 @@ void sendToMysql(const SoilReading &soil, const GpsFix &where)
   }
   else if (httpCode > 0)
   {
-    Serial.printf("   [HTTP] POST code: %d\n", httpCode);
+    Serial.print("   [HTTP] POST code: ");
+    Serial.println(httpCode);
   }
   else
   {
-    Serial.printf("   [HTTP] POST failed: %s\n", http.errorToString(httpCode).c_str());
+    Serial.print("   [HTTP] POST failed: ");
+    Serial.println(http.errorToString(httpCode));
   }
 
   http.end();

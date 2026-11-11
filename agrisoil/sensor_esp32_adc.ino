@@ -6,70 +6,73 @@
 // Got separate wires for each probe? Just change the pins below.
 #if READ_METHOD == READ_WITH_ESP32_ADC
 
-const uint8_t NPK_PIN = 35;
-const uint8_t MOISTURE_PIN = 35;
-const uint8_t PH_PIN = 35;
+#define NPK_PIN 35
+#define MOIST_PIN 35
+#define PH_PIN 35
 
-const uint8_t SAMPLES = 10;
-const uint16_t SAMPLE_GAP_MS = 20;
+#define SAMPLES 10
+#define SAMPLE_GAP_MS 20
 
 // Above this (on the 0-1023 scale) the probe is hanging in the air.
-const long OUT_OF_SOIL_LEVEL = 1010;
+#define OUT_OF_SOIL_LEVEL 1010
 
 void beginSensors()
 {
   analogReadResolution(12); // 0 - 4095
 }
 
-SoilReading readSoil()
+void readSoil()
 {
-  SoilReading soil = {}; // everything starts at 0
-
-  soil.npkRaw = readAverage(NPK_PIN);
-  soil.moistureRaw = readAverage(MOISTURE_PIN);
-  soil.phRaw = readAverage(PH_PIN);
+  npk1ADC = readAverage(NPK_PIN);
+  npk2ADC = 0; // only one NPK probe on this board
+  moistADC = readAverage(MOIST_PIN);
+  phADC = readAverage(PH_PIN);
 
   // The calibration was made on a 10-bit scale (Arduino Uno days), keep it that way.
-  long npk = toTenBit(soil.npkRaw);
-  long moisture = toTenBit(soil.moistureRaw);
-  long ph = toTenBit(soil.phRaw);
+  int npk = map(npk1ADC, 0, 4095, 0, 1023);
+  int moist = map(moistADC, 0, 4095, 0, 1023);
+  int ph = map(phADC, 0, 4095, 0, 1023);
 
-  soil.probeInSoil = npk <= OUT_OF_SOIL_LEVEL;
-  if (!soil.probeInSoil)
+  probeInSoil = npk <= OUT_OF_SOIL_LEVEL;
+  if (!probeInSoil)
   {
     Serial.println("=> Probe nggak nancep di tanah, semua nilai 0");
-    return soil;
+    nilaiN = 0;
+    nilaiP = 0;
+    nilaiK = 0;
+    nilaiPH = 0;
+    nilaiMoist = 0;
+    return;
   }
 
   //*********************** NPK
-  soil.nitrogen = constrain(map(npk, 0, 1023, 350, 60), 0L, 900L);
-  soil.phosphorus = constrain(map(npk, 100, 1023, 32, 5), 0L, 100L);
-  soil.potassium = constrain(map(npk, 30, 1023, 210, 70), 0L, 700L);
+  nilaiN = map(npk, 0, 1023, 350, 60);
+  nilaiN = constrain(nilaiN, 0, 900);
+
+  nilaiP = map(npk, 100, 1023, 32, 5);
+  nilaiP = constrain(nilaiP, 0, 100);
+
+  nilaiK = map(npk, 30, 1023, 210, 70);
+  nilaiK = constrain(nilaiK, 0, 700);
 
   //*********************** moisture
-  soil.moisture = map(moisture, 0, 1023, 100, 20);
+  nilaiMoist = map(moist, 0, 1023, 100, 20);
 
   //*********************** pH
   float phScale = map(ph, 0, 950, 10, 35);
-  soil.ph = constrain(-0.0693f * phScale + 7.3855f, 1.0f, 14.0f);
-
-  return soil;
+  nilaiPH = (-0.0693 * phScale) + 7.3855;
+  nilaiPH = constrain(nilaiPH, 1, 14);
 }
 
-int32_t readAverage(uint8_t pin)
+long readAverage(int pin)
 {
-  int32_t sum = 0;
-  for (uint8_t i = 0; i < SAMPLES; i++)
+  long total = 0;
+  for (int i = 0; i < SAMPLES; i++)
   {
-    sum += analogRead(pin);
+    total += analogRead(pin);
     delay(SAMPLE_GAP_MS);
   }
-  return sum / SAMPLES;
-}
-
-long toTenBit(int32_t raw)
-{
-  return map(raw, 0, 4095, 0, 1023);
+  return total / SAMPLES;
 }
 
 #endif

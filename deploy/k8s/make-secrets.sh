@@ -1,6 +1,7 @@
 #!/bin/sh
 # Creates the Secrets for agrisoil-dev with random passwords.
-# Never overwrites an existing Secret, so running it again is safe.
+# Never overwrites an existing value: an existing Secret only gets the keys it is missing,
+# so running it again (e.g. after a new key was added here) is safe.
 # Read a value later with e.g.:
 #   kubectl -n agrisoil-dev get secret nodered-auth -o jsonpath='{.data.admin-password}' | base64 -d
 set -eu
@@ -10,6 +11,13 @@ rand() { head -c 32 /dev/urandom | base64 | tr -dc 'A-Za-z0-9' | head -c 24; }
 make() {
   name=$1; shift
   if kubectl -n "$NS" get secret "$name" >/dev/null 2>&1; then
+    for kv in "$@"; do
+      key=${kv%%=*}
+      if [ -z "$(kubectl -n "$NS" get secret "$name" -o jsonpath="{.data.$key}")" ]; then
+        kubectl -n "$NS" patch secret "$name" --type merge -p "{\"stringData\":{\"$key\":\"${kv#*=}\"}}" >/dev/null
+        echo "secret/$name: added missing key $key"
+      fi
+    done
     echo "secret/$name exists, kept"
     return
   fi
@@ -25,5 +33,4 @@ kubectl get ns "$NS" >/dev/null 2>&1 || kubectl create ns "$NS"
 make mosquitto-auth "nodered-password=$(rand)" "device-password=$(rand)"
 make postgres-auth "agrisoil-password=$(rand)" "dashboard-password=$(rand)"
 make nodered-auth "admin-user=admin" "admin-password=$(rand)" "http-user=agrisoil" "http-password=$(rand)" \
-  "credential-secret=$(rand)"
-make dashboard-auth "admin-user=admin" "admin-password=$(rand)"
+  "credential-secret=$(rand)" "viewer-user=viewer" "viewer-password=$(rand)"

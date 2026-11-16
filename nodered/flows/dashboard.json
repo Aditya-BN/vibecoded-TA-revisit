@@ -1,0 +1,982 @@
+[
+  {
+    "id": "dash_tab",
+    "type": "tab",
+    "label": "Agrisoil dashboard",
+    "disabled": false,
+    "info": "Node-RED Dashboard 2.0 at /dashboard (login: nodered-auth viewer-user/viewer-password, or admin).\nEvery sensor in the devices table shows up by itself: no flow edit for a new DEVICE_ID.\nSensor page: each browser tab keeps its own sensor + range (msg._client, client constraints)."
+  },
+  {
+    "id": "dash_base",
+    "type": "ui-base",
+    "name": "Agrisoil",
+    "path": "/dashboard",
+    "appIcon": "",
+    "includeClientData": true,
+    "acceptsClientConfig": [
+      "ui-notification",
+      "ui-control",
+      "ui-dropdown",
+      "ui-button-group",
+      "ui-chart",
+      "ui-template"
+    ],
+    "showPathInSidebar": false,
+    "headerContent": "page",
+    "navigationStyle": "default",
+    "titleBarStyle": "default",
+    "showReconnectNotification": true,
+    "notificationDisplayTime": 1,
+    "showDisconnectNotification": true,
+    "allowInstall": false
+  },
+  {
+    "id": "dash_theme",
+    "type": "ui-theme",
+    "name": "Agrisoil",
+    "colors": {
+      "surface": "#1f3a24",
+      "primary": "#2f7d32",
+      "bgPage": "#f4f6f1",
+      "groupBg": "#ffffff",
+      "groupOutline": "#e1e6dd"
+    },
+    "sizes": {
+      "density": "default",
+      "pagePadding": "14px",
+      "groupGap": "14px",
+      "groupBorderRadius": "14px",
+      "widgetGap": "12px"
+    }
+  },
+  {
+    "id": "dash_page_overview",
+    "type": "ui-page",
+    "name": "Overview",
+    "ui": "dash_base",
+    "path": "/overview",
+    "icon": "view-dashboard",
+    "layout": "grid",
+    "theme": "dash_theme",
+    "breakpoints": [
+      {
+        "name": "Default",
+        "px": "0",
+        "cols": "3"
+      },
+      {
+        "name": "Tablet",
+        "px": "576",
+        "cols": "6"
+      },
+      {
+        "name": "Small Desktop",
+        "px": "768",
+        "cols": "9"
+      },
+      {
+        "name": "Desktop",
+        "px": "1024",
+        "cols": "12"
+      }
+    ],
+    "order": 1,
+    "className": "",
+    "visible": "true",
+    "disabled": "false"
+  },
+  {
+    "id": "dash_page_sensor",
+    "type": "ui-page",
+    "name": "Sensor",
+    "ui": "dash_base",
+    "path": "/sensor",
+    "icon": "chart-line",
+    "layout": "grid",
+    "theme": "dash_theme",
+    "breakpoints": [
+      {
+        "name": "Default",
+        "px": "0",
+        "cols": "3"
+      },
+      {
+        "name": "Tablet",
+        "px": "576",
+        "cols": "6"
+      },
+      {
+        "name": "Small Desktop",
+        "px": "768",
+        "cols": "9"
+      },
+      {
+        "name": "Desktop",
+        "px": "1024",
+        "cols": "12"
+      }
+    ],
+    "order": 2,
+    "className": "",
+    "visible": "true",
+    "disabled": "false"
+  },
+  {
+    "id": "dash_g_cards",
+    "type": "ui-group",
+    "name": "Semua sensor",
+    "page": "dash_page_overview",
+    "width": 12,
+    "height": 1,
+    "order": 1,
+    "showTitle": true,
+    "className": "",
+    "visible": "true",
+    "disabled": "false",
+    "groupType": "default"
+  },
+  {
+    "id": "dash_g_map",
+    "type": "ui-group",
+    "name": "Lokasi terakhir",
+    "page": "dash_page_overview",
+    "width": 12,
+    "height": 1,
+    "order": 2,
+    "showTitle": true,
+    "className": "",
+    "visible": "true",
+    "disabled": "false",
+    "groupType": "default"
+  },
+  {
+    "id": "dash_g_select",
+    "type": "ui-group",
+    "name": "Pilih sensor",
+    "page": "dash_page_sensor",
+    "width": 12,
+    "height": 1,
+    "order": 1,
+    "showTitle": true,
+    "className": "",
+    "visible": "true",
+    "disabled": "false",
+    "groupType": "default"
+  },
+  {
+    "id": "dash_g_latest",
+    "type": "ui-group",
+    "name": "Nilai terakhir",
+    "page": "dash_page_sensor",
+    "width": 12,
+    "height": 1,
+    "order": 2,
+    "showTitle": true,
+    "className": "",
+    "visible": "true",
+    "disabled": "false",
+    "groupType": "default"
+  },
+  {
+    "id": "dash_g_hist",
+    "type": "ui-group",
+    "name": "Riwayat",
+    "page": "dash_page_sensor",
+    "width": 12,
+    "height": 1,
+    "order": 3,
+    "showTitle": true,
+    "className": "",
+    "visible": "true",
+    "disabled": "false",
+    "groupType": "default"
+  },
+  {
+    "id": "dash_g_raw",
+    "type": "ui-group",
+    "name": "Raw ADC",
+    "page": "dash_page_sensor",
+    "width": 12,
+    "height": 1,
+    "order": 4,
+    "showTitle": false,
+    "className": "",
+    "visible": "true",
+    "disabled": "false",
+    "groupType": "default"
+  },
+  {
+    "id": "dash_css",
+    "type": "ui-template",
+    "z": "dash_tab",
+    "group": "",
+    "page": "",
+    "ui": "dash_base",
+    "name": "agrisoil CSS",
+    "order": 0,
+    "width": 0,
+    "height": 0,
+    "head": "",
+    "format": "\n.agri-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 14px; width: 100%; }\n.agri-card { display: block; border: 1px solid #e1e6dd; border-radius: 14px; padding: 14px; text-decoration: none; color: #1d2a1f; background: #fff; }\n.agri-card:hover { box-shadow: 0 6px 18px rgba(0,0,0,.08); }\n.agri-card.off { opacity: .7; }\n.agri-head { display: flex; align-items: baseline; gap: 8px; margin-bottom: 10px; }\n.agri-head b { font-size: 1.05rem; }\n.agri-id { color: #6b766d; font-size: .8rem; font-family: monospace; }\n.agri-pill { margin-left: auto; font-size: .75rem; font-weight: 600; padding: 2px 9px; border-radius: 99px; white-space: nowrap; }\n.agri-pill.on { background: #e3f2e1; color: #2f7d32; }\n.agri-pill.offl { background: #fbe4e2; color: #b3261e; }\n.agri-pill.warn { background: #fff1d6; color: #8a5a00; margin-left: 4px; }\n.agri-vals { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }\n.agri-v { background: #f4f6f1; border-radius: 10px; padding: 8px 4px; text-align: center; min-width: 0; }\n.agri-v .l { font-size: .7rem; color: #6b766d; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }\n.agri-v .n { font-size: 1.05rem; font-weight: 650; font-variant-numeric: tabular-nums; white-space: nowrap; }\n.agri-v small { font-size: .65rem; color: #6b766d; font-weight: 500; }\n.agri-foot { margin-top: 10px; font-size: .8rem; color: #6b766d; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 6px; }\n.agri-empty { color: #6b766d; padding: 24px; text-align: center; border: 1px dashed #e1e6dd; border-radius: 14px; }\n.agri-big .agri-vals { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; }\n.agri-big .agri-v { background: #fff; border: 1px solid #e1e6dd; padding: 12px; }\n.agri-big .agri-v .l { font-size: .8rem; }\n.agri-big .agri-v .n { font-size: 1.5rem; }\n.agri-meta { display: flex; gap: 18px; flex-wrap: wrap; color: #6b766d; font-size: .85rem; margin-top: 10px; }\n.agri-table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }\n.agri-table th, .agri-table td { text-align: left; padding: 6px 8px; border-bottom: 1px solid #e1e6dd; font-size: .9rem; }\n.agri-table th { color: #6b766d; font-weight: 500; }\n.agri-note { color: #6b766d; font-size: .8rem; margin-top: 8px; }\n@media (max-width: 520px) { .agri-vals { grid-template-columns: repeat(3, 1fr); } }\n",
+    "storeOutMessages": true,
+    "passthru": false,
+    "resendOnRefresh": true,
+    "templateScope": "site:style",
+    "className": "",
+    "x": 150,
+    "y": 40,
+    "wires": [
+      []
+    ]
+  },
+  {
+    "id": "dash_tick",
+    "type": "inject",
+    "z": "dash_tab",
+    "name": "every 10 s",
+    "props": [
+      {
+        "p": "topic",
+        "vt": "str"
+      }
+    ],
+    "repeat": "10",
+    "crontab": "",
+    "once": true,
+    "onceDelay": "2",
+    "topic": "tick",
+    "x": 130,
+    "y": 100,
+    "wires": [
+      [
+        "dash_ov_params",
+        "dash_state"
+      ]
+    ]
+  },
+  {
+    "id": "dash_ov_params",
+    "type": "function",
+    "z": "dash_tab",
+    "name": "offline after",
+    "func": "msg.params = [Number(env.get('OFFLINE_AFTER_SECONDS') || 120)];\nreturn msg;\n",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 330,
+    "y": 100,
+    "wires": [
+      [
+        "dash_ov_pg"
+      ]
+    ]
+  },
+  {
+    "id": "dash_ov_pg",
+    "type": "postgresql",
+    "z": "dash_tab",
+    "name": "all devices + latest reading",
+    "query": "SELECT d.id, COALESCE(NULLIF(d.name, ''), d.id) AS name, d.first_seen, d.last_seen, d.last_lat, d.last_lng,\n       r.ts, r.n, r.p, r.k, r.ph, r.moist, r.npk1_raw, r.npk2_raw, r.moist_raw, r.ph_raw, r.in_soil,\n       (now() - d.last_seen) < make_interval(secs => $1::int) AS online, now() AS server_now\nFROM devices d\nLEFT JOIN LATERAL (SELECT * FROM readings WHERE device_id = d.id ORDER BY ts DESC LIMIT 1) r ON true ORDER BY d.id",
+    "postgreSQLConfig": "ingest_pgconf",
+    "split": false,
+    "rowsPerMsg": 1,
+    "outputs": 1,
+    "x": 560,
+    "y": 100,
+    "wires": [
+      [
+        "dash_ov_fn"
+      ]
+    ]
+  },
+  {
+    "id": "dash_ov_fn",
+    "type": "function",
+    "z": "dash_tab",
+    "name": "cards, map, dropdown options",
+    "func": "// Same data for every viewer: cards + map (no msg._client, so everyone gets it and\n// late joiners get the stored copy). The dropdown options are only re-sent when the\n// list of sensors changes, so nobody's selection is disturbed every 10 s.\nconst rows = Array.isArray(msg.payload) ? msg.payload : [];\nconst now = rows.length ? rows[0].server_now : new Date();\nconst devices = rows.map(({ server_now, ...d }) => d);\nconst ids = devices.map(d => d.id);\nflow.set('deviceIds', ids);\n\nconst view = { payload: devices, now, sentAt: Date.now() };\nlet options = null;\nconst sig = JSON.stringify(devices.map(d => [d.id, d.name]));\nif (sig !== flow.get('optionsSig')) {\n    flow.set('optionsSig', sig);\n    options = { ui_update: { options: devices.map(d => ({ label: d.name === d.id ? d.id : d.name + ' (' + d.id + ')', value: d.id })) } };\n}\nreturn [view, { ...view }, options];\n",
+    "outputs": 3,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 800,
+    "y": 100,
+    "wires": [
+      [
+        "dash_cards"
+      ],
+      [
+        "dash_map"
+      ],
+      [
+        "dash_dropdown"
+      ]
+    ]
+  },
+  {
+    "id": "dash_cards",
+    "type": "ui-template",
+    "z": "dash_tab",
+    "group": "dash_g_cards",
+    "page": "",
+    "ui": "",
+    "name": "sensor cards",
+    "order": 1,
+    "width": 12,
+    "height": 0,
+    "head": "",
+    "format": "<template>\n  <div style=\"width: 100%\">\n    <div class=\"agri-grid\">\n      <div v-if=\"!devices.length\" class=\"agri-empty\">Belum ada sensor. Sensor baru muncul otomatis setelah kirim data pertama ke <code>agrisoil/&lt;DEVICE_ID&gt;/reading</code>.</div>\n      <a v-for=\"d in devices\" :key=\"d.id\" class=\"agri-card\" :class=\"{ off: !d.online }\" :href=\"link(d.id)\">\n        <div class=\"agri-head\">\n          <b>{{ d.name }}</b><span v-if=\"d.name !== d.id\" class=\"agri-id\">{{ d.id }}</span>\n          <span class=\"agri-pill\" :class=\"d.online ? 'on' : 'offl'\">\u25cf {{ d.online ? 'online' : 'offline' }}</span>\n          <span v-if=\"d.in_soil === false\" class=\"agri-pill warn\">tidak di tanah</span>\n        </div>\n        <div class=\"agri-vals\">\n          <div v-for=\"f in fields\" :key=\"f.k\" class=\"agri-v\" :title=\"f.l\">\n            <div class=\"l\">{{ f.s }}</div><div class=\"n\">{{ fmt(d[f.k], f.d) }}</div><small>{{ f.u }}</small>\n          </div>\n        </div>\n        <div class=\"agri-foot\"><span :title=\"wib(d.last_seen)\">Terakhir: {{ ago(d.last_seen) }}</span><span>{{ wib(d.ts) }}</span></div>\n      </a>\n    </div>\n  </div>\n</template>\n\n<script>\nexport default {\n  data() { return { fields: [\n        { k: 'n', s: 'N', l: 'Nitrogen (N)', u: 'ppm', d: 1 },\n        { k: 'p', s: 'P', l: 'Fosfor (P)', u: 'ppm', d: 1 },\n        { k: 'k', s: 'K', l: 'Kalium (K)', u: 'ppm', d: 1 },\n        { k: 'ph', s: 'pH', l: 'pH tanah', u: 'pH', d: 2 },\n        { k: 'moist', s: 'Lembap', l: 'Kelembapan', u: '%', d: 1 },\n      ], tick: Date.now() } },\n  computed: {\n    devices() { return Array.isArray(this.msg?.payload) ? this.msg.payload : [] },\n    // server time minus the time it was sent, so \"x ago\" is right even if the viewer's clock is off\n    skew() { return this.msg?.now && this.msg?.sentAt ? new Date(this.msg.now) - this.msg.sentAt : 0 },\n  },\n  mounted() { this.timer = setInterval(() => { this.tick = Date.now() }, 1000) },\n  unmounted() { clearInterval(this.timer) },\n  methods: {\n\n    fmt(v, d) { return v === null || v === undefined || isNaN(Number(v)) ? '\u2013' : Number(v).toFixed(d) },\n    wib(t) {\n      if (!t) return '\u2013'\n      return new Intl.DateTimeFormat('id-ID', { timeZone: 'Asia/Jakarta', day: '2-digit', month: 'short', year: 'numeric',\n        hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }).format(new Date(t)) + ' WIB'\n    },\n    ago(t) {\n      if (!t) return 'belum pernah'\n      const s = Math.max(0, Math.round((this.tick + this.skew - new Date(t)) / 1000))\n      if (s < 60) return s + ' dtk lalu'\n      if (s < 3600) return Math.floor(s / 60) + ' mnt lalu'\n      if (s < 86400) return Math.floor(s / 3600) + ' jam lalu'\n      return Math.floor(s / 86400) + ' hari lalu'\n    },\n\n    link(id) { return 'sensor?device=' + encodeURIComponent(id) },\n  },\n}\n</script>\n",
+    "storeOutMessages": true,
+    "passthru": false,
+    "resendOnRefresh": true,
+    "templateScope": "local",
+    "className": "",
+    "x": 1060,
+    "y": 60,
+    "wires": [
+      []
+    ]
+  },
+  {
+    "id": "dash_map",
+    "type": "ui-template",
+    "z": "dash_tab",
+    "group": "dash_g_map",
+    "page": "",
+    "ui": "",
+    "name": "map (Leaflet)",
+    "order": 1,
+    "width": 12,
+    "height": 0,
+    "head": "",
+    "format": "<template>\n  <div style=\"width: 100%\">\n    <div ref=\"map\" style=\"height: 420px; border-radius: 12px; background: #e9ece6\"></div>\n    <div v-if=\"!hasPoints\" class=\"agri-note\">Belum ada lokasi GPS.</div>\n  </div>\n</template>\n\n<script>\nexport default {\n  data() { return { hasPoints: false } },\n  watch: { msg: function () { this.draw() } },\n  mounted() {\n    // Dashboard 2.0 has no map widget: Leaflet (served by Node-RED at /vendor/leaflet/) in a ui-template.\n    this.loadLeaflet().then((L) => {\n      this.map = L.map(this.$refs.map, { scrollWheelZoom: false }).setView([-6.2, 106.8166], 13)\n      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap contributors' }).addTo(this.map)\n      this.markers = {}\n      this.draw()\n    })\n  },\n  unmounted() { if (this.map) this.map.remove() },\n  methods: {\n    loadLeaflet() {\n  if (window.L) return Promise.resolve(window.L)\n  if (!window.__agriLeaflet) {\n    window.__agriLeaflet = new Promise((resolve, reject) => {\n      const css = document.createElement('link')\n      css.rel = 'stylesheet'; css.href = '/vendor/leaflet/leaflet.css'\n      document.head.appendChild(css)\n      const js = document.createElement('script')\n      js.src = '/vendor/leaflet/leaflet.js'\n      js.onload = () => resolve(window.L); js.onerror = reject\n      document.head.appendChild(js)\n    })\n  }\n  return window.__agriLeaflet\n    },\n    esc(s) { return String(s ?? '').replace(/[&<>\"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '\"': '&quot;', \"'\": '&#39;' }[c])) },\n    draw() {\n      if (!this.map) return\n      const L = window.L\n      const devices = Array.isArray(this.msg?.payload) ? this.msg.payload : []\n      const pts = []\n      let added = false\n      for (const d of devices) {\n        if (d.last_lat === null || d.last_lng === null) continue\n        const ll = [d.last_lat, d.last_lng]\n        pts.push(ll)\n        const html = '<b><a href=\"sensor?device=' + encodeURIComponent(d.id) + '\">' + this.esc(d.name) + '</a></b><br>' +\n          (d.online ? 'online' : 'offline') + '<br>N ' + (d.n ?? '\u2013') + ' \u00b7 P ' + (d.p ?? '\u2013') + ' \u00b7 K ' + (d.k ?? '\u2013') + ' ppm<br>' +\n          'pH ' + (d.ph ?? '\u2013') + ' \u00b7 ' + (d.moist ?? '\u2013') + ' %'\n        if (!this.markers[d.id]) {\n          this.markers[d.id] = L.marker(ll, { title: d.name }).addTo(this.map)\n            .bindTooltip(this.esc(d.name), { permanent: true, direction: 'top', offset: [-15, -12] }).bindPopup(html)\n          added = true\n        } else {\n          this.markers[d.id].setLatLng(ll).setPopupContent(html)\n        }\n      }\n      this.hasPoints = pts.length > 0\n      // fit once, and again whenever a new sensor appears\n      if (pts.length && (added || !this.fitted)) {\n        this.map.invalidateSize()\n        this.map.fitBounds(pts, { paddingTopLeft: [40, 70], paddingBottomRight: [40, 30], maxZoom: 16 })\n        this.fitted = true\n      }\n    },\n  },\n}\n</script>\n",
+    "storeOutMessages": true,
+    "passthru": false,
+    "resendOnRefresh": true,
+    "templateScope": "local",
+    "className": "",
+    "x": 1060,
+    "y": 100,
+    "wires": [
+      []
+    ]
+  },
+  {
+    "id": "dash_event",
+    "type": "ui-event",
+    "z": "dash_tab",
+    "ui": "dash_base",
+    "name": "page views",
+    "x": 130,
+    "y": 220,
+    "wires": [
+      [
+        "dash_state"
+      ]
+    ]
+  },
+  {
+    "id": "dash_dropdown",
+    "type": "ui-dropdown",
+    "z": "dash_tab",
+    "group": "dash_g_select",
+    "name": "sensor",
+    "label": "Sensor",
+    "tooltip": "",
+    "order": 1,
+    "width": 6,
+    "height": 1,
+    "passthru": false,
+    "multiple": false,
+    "chips": false,
+    "clearable": false,
+    "options": [],
+    "payload": "",
+    "topic": "device",
+    "topicType": "str",
+    "className": "",
+    "typeIsComboBox": false,
+    "msgTrigger": "onChange",
+    "x": 1060,
+    "y": 140,
+    "wires": [
+      [
+        "dash_state"
+      ]
+    ]
+  },
+  {
+    "id": "dash_range",
+    "type": "ui-button-group",
+    "z": "dash_tab",
+    "group": "dash_g_select",
+    "name": "range",
+    "label": "Rentang",
+    "order": 2,
+    "width": 6,
+    "height": 1,
+    "rounded": true,
+    "useThemeColors": true,
+    "passthru": false,
+    "className": "",
+    "options": [
+      {
+        "label": "1 jam",
+        "icon": "",
+        "value": "1h",
+        "valueType": "str",
+        "color": ""
+      },
+      {
+        "label": "24 jam",
+        "icon": "",
+        "value": "24h",
+        "valueType": "str",
+        "color": ""
+      },
+      {
+        "label": "7 hari",
+        "icon": "",
+        "value": "7d",
+        "valueType": "str",
+        "color": ""
+      }
+    ],
+    "topic": "range",
+    "topicType": "str",
+    "x": 1060,
+    "y": 300,
+    "wires": [
+      [
+        "dash_state"
+      ]
+    ]
+  },
+  {
+    "id": "dash_state",
+    "type": "function",
+    "z": "dash_tab",
+    "name": "per-viewer state",
+    "func": "// Remembers, per browser tab (socket id), which sensor and range it is looking at,\n// so one viewer's choice never changes another viewer's screen (client constraints).\n// Inputs: ui-event ($pageview/$pageleave), dropdown (topic \"device\"), range buttons (topic \"range\"), tick.\n// Outputs: 1 = load data for one client, 2 = set that client's dropdown, 3 = set that client's range buttons.\nconst clients = flow.get('clients') || {};\nconst devices = flow.get('deviceIds') || [];\nconst now = Date.now();\nconst out1 = [], out2 = [], out3 = [];\n\nfunction client(msg) { return msg._client && msg._client.socketId; }\nfunction load(id) {\n    const c = clients[id];\n    if (!c.device) return;\n    out1.push({ _client: c.client, device: c.device, range: c.range });\n}\n\nif (msg.topic === 'tick') {\n    for (const [id, c] of Object.entries(clients)) {\n        if (now - c.seen > 6 * 3600 * 1000) delete clients[id]; // tab long gone\n        else load(id);\n    }\n} else if (msg.topic === '$pageview' || msg.topic === '$pageleave') {\n    const id = client(msg);\n    const page = msg.payload && msg.payload.page;\n    const onSensor = page && page.path === '/sensor';\n    if (!id) return null;\n    if (msg.topic === '$pageleave' || !onSensor) {\n        if (msg.topic === '$pageleave' && onSensor) delete clients[id];\n    } else {\n        const q = (msg.payload.query) || {};\n        const c = clients[id] || { range: '24h' };\n        c.client = msg._client;\n        c.seen = now;\n        if (q.device && /^[A-Za-z0-9_]{1,64}$/.test(q.device)) c.device = q.device;\n        if (!c.device) c.device = devices[0];\n        clients[id] = c;\n        if (c.device) out2.push({ payload: c.device, _client: c.client });\n        out3.push({ payload: c.range, _client: c.client });\n        load(id);\n    }\n} else if (msg.topic === 'device' || msg.topic === 'range') {\n    const id = client(msg);\n    if (!id) return null;\n    const c = clients[id] || { range: '24h' };\n    c.client = msg._client;\n    c.seen = now;\n    if (msg.topic === 'device' && typeof msg.payload === 'string' && msg.payload) c.device = msg.payload;\n    if (msg.topic === 'range' && ['1h', '24h', '7d'].includes(msg.payload)) c.range = msg.payload;\n    clients[id] = c;\n    load(id);\n}\n\nflow.set('clients', clients);\nreturn [out1, out2, out3];\n",
+    "outputs": 3,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 360,
+    "y": 240,
+    "wires": [
+      [
+        "dash_lt_params"
+      ],
+      [
+        "dash_dropdown"
+      ],
+      [
+        "dash_range"
+      ]
+    ]
+  },
+  {
+    "id": "dash_lt_params",
+    "type": "function",
+    "z": "dash_tab",
+    "name": "params",
+    "func": "msg.params = [Number(env.get('OFFLINE_AFTER_SECONDS') || 120), msg.device];\nreturn msg;\n",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 560,
+    "y": 220,
+    "wires": [
+      [
+        "dash_lt_pg"
+      ]
+    ]
+  },
+  {
+    "id": "dash_lt_pg",
+    "type": "postgresql",
+    "z": "dash_tab",
+    "name": "latest reading",
+    "query": "SELECT d.id, COALESCE(NULLIF(d.name, ''), d.id) AS name, d.first_seen, d.last_seen, d.last_lat, d.last_lng,\n       r.ts, r.n, r.p, r.k, r.ph, r.moist, r.npk1_raw, r.npk2_raw, r.moist_raw, r.ph_raw, r.in_soil,\n       (now() - d.last_seen) < make_interval(secs => $1::int) AS online, now() AS server_now\nFROM devices d\nLEFT JOIN LATERAL (SELECT * FROM readings WHERE device_id = d.id ORDER BY ts DESC LIMIT 1) r ON true WHERE d.id = $2",
+    "postgreSQLConfig": "ingest_pgconf",
+    "split": false,
+    "rowsPerMsg": 1,
+    "outputs": 1,
+    "x": 720,
+    "y": 220,
+    "wires": [
+      [
+        "dash_hist_params"
+      ]
+    ]
+  },
+  {
+    "id": "dash_hist_params",
+    "type": "function",
+    "z": "dash_tab",
+    "name": "range -> bucket",
+    "func": "// 1 h / 24 h / 7 d, bucketed in SQL so every chart stays at a few hundred points\nconst RANGES = { '1h': ['1 hour', '10 seconds'], '24h': ['24 hours', '2 minutes'], '7d': ['7 days', '15 minutes'] };\nmsg.latest = Array.isArray(msg.payload) ? msg.payload[0] : null;\nconst [win, bucket] = RANGES[msg.range] || RANGES['24h'];\nmsg.params = [msg.device, bucket, win];\nreturn msg;\n",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 560,
+    "y": 280,
+    "wires": [
+      [
+        "dash_hist_pg"
+      ]
+    ]
+  },
+  {
+    "id": "dash_hist_pg",
+    "type": "postgresql",
+    "z": "dash_tab",
+    "name": "history (bucketed)",
+    "query": "SELECT date_bin($2::interval, ts, timestamptz '2000-01-01') AS t,\n       avg(n)::real AS n, avg(p)::real AS p, avg(k)::real AS k, avg(ph)::real AS ph, avg(moist)::real AS moist,\n       avg(npk1_raw)::real AS npk1_raw, avg(npk2_raw)::real AS npk2_raw,\n       avg(moist_raw)::real AS moist_raw, avg(ph_raw)::real AS ph_raw\nFROM readings\nWHERE device_id = $1 AND ts >= now() - $3::interval\nGROUP BY 1 ORDER BY 1",
+    "postgreSQLConfig": "ingest_pgconf",
+    "split": false,
+    "rowsPerMsg": 1,
+    "outputs": 1,
+    "x": 740,
+    "y": 280,
+    "wires": [
+      [
+        "dash_widgets"
+      ]
+    ]
+  },
+  {
+    "id": "dash_widgets",
+    "type": "function",
+    "z": "dash_tab",
+    "name": "to widgets (this viewer only)",
+    "func": "// One client's sensor page: latest values, the five charts (same rows, each chart picks its key)\n// and the raw ADC table. Every message carries msg._client, so only that viewer gets it.\nconst c = msg._client;\nconst rows = Array.isArray(msg.payload) ? msg.payload : [];\nconst points = rows.map(r => ({ ...r, t: new Date(r.t).getTime() }));\n\nconst latest = msg.latest\n    ? { payload: msg.latest, _client: c }\n    : { payload: null, missing: msg.device, _client: c };\n\nconst charts = { payload: points, action: 'replace', _client: c };\nif (!points.length) charts.payload = []; // clears the chart\n\nconst stats = {};\nfor (const k of ['npk1_raw', 'npk2_raw', 'moist_raw', 'ph_raw']) {\n    const v = rows.map(r => r[k]).filter(x => x !== null);\n    if (v.length) stats[k] = { min: Math.min(...v), max: Math.max(...v), avg: v.reduce((a, b) => a + b, 0) / v.length };\n}\nconst raw = { payload: { latest: msg.latest || {}, stats }, range: msg.range, _client: c };\nreturn [latest, charts, raw];\n",
+    "outputs": 3,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 800,
+    "y": 360,
+    "wires": [
+      [
+        "dash_latest"
+      ],
+      [
+        "dash_c_n",
+        "dash_c_p",
+        "dash_c_k",
+        "dash_c_ph",
+        "dash_c_moist"
+      ],
+      [
+        "dash_raw"
+      ]
+    ]
+  },
+  {
+    "id": "dash_latest",
+    "type": "ui-template",
+    "z": "dash_tab",
+    "group": "dash_g_latest",
+    "page": "",
+    "ui": "",
+    "name": "latest values",
+    "order": 1,
+    "width": 12,
+    "height": 0,
+    "head": "",
+    "format": "<template>\n  <div class=\"agri-big\" style=\"width: 100%\">\n    <div v-if=\"!d\" class=\"agri-empty\">{{ msg?.missing ? 'Sensor \"' + msg.missing + '\" belum pernah kirim data.' : 'Pilih sensor.' }}</div>\n    <template v-else>\n      <div class=\"agri-head\">\n        <b>{{ d.name }}</b><span v-if=\"d.name !== d.id\" class=\"agri-id\">{{ d.id }}</span>\n        <span class=\"agri-pill\" :class=\"d.online ? 'on' : 'offl'\" style=\"margin-left: 8px\">\u25cf {{ d.online ? 'online' : 'offline' }}</span>\n        <span v-if=\"d.in_soil === false\" class=\"agri-pill warn\">tidak di tanah</span>\n      </div>\n      <div class=\"agri-vals\">\n        <div v-for=\"f in fields\" :key=\"f.k\" class=\"agri-v\">\n          <div class=\"l\">{{ f.l }}</div><div class=\"n\">{{ fmt(d[f.k], f.d) }} <small>{{ f.u }}</small></div>\n        </div>\n      </div>\n      <div class=\"agri-meta\">\n        <span>Bacaan terakhir: <b>{{ wib(d.ts) }}</b></span>\n        <span>Terakhir terlihat: <b>{{ ago(d.last_seen) }}</b></span>\n        <span>Pertama terlihat: {{ wib(d.first_seen) }}</span>\n        <span v-if=\"d.last_lat !== null\">Lokasi: {{ d.last_lat.toFixed(6) }}, {{ d.last_lng.toFixed(6) }}</span>\n      </div>\n    </template>\n  </div>\n</template>\n\n<script>\nexport default {\n  data() { return { fields: [\n        { k: 'n', s: 'N', l: 'Nitrogen (N)', u: 'ppm', d: 1 },\n        { k: 'p', s: 'P', l: 'Fosfor (P)', u: 'ppm', d: 1 },\n        { k: 'k', s: 'K', l: 'Kalium (K)', u: 'ppm', d: 1 },\n        { k: 'ph', s: 'pH', l: 'pH tanah', u: 'pH', d: 2 },\n        { k: 'moist', s: 'Lembap', l: 'Kelembapan', u: '%', d: 1 },\n      ], tick: Date.now() } },\n  computed: {\n    d() { return this.msg?.payload || null },\n    skew() { return 0 },\n  },\n  mounted() { this.timer = setInterval(() => { this.tick = Date.now() }, 1000) },\n  unmounted() { clearInterval(this.timer) },\n  methods: {\n\n    fmt(v, d) { return v === null || v === undefined || isNaN(Number(v)) ? '\u2013' : Number(v).toFixed(d) },\n    wib(t) {\n      if (!t) return '\u2013'\n      return new Intl.DateTimeFormat('id-ID', { timeZone: 'Asia/Jakarta', day: '2-digit', month: 'short', year: 'numeric',\n        hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }).format(new Date(t)) + ' WIB'\n    },\n    ago(t) {\n      if (!t) return 'belum pernah'\n      const s = Math.max(0, Math.round((this.tick + this.skew - new Date(t)) / 1000))\n      if (s < 60) return s + ' dtk lalu'\n      if (s < 3600) return Math.floor(s / 60) + ' mnt lalu'\n      if (s < 86400) return Math.floor(s / 3600) + ' jam lalu'\n      return Math.floor(s / 86400) + ' hari lalu'\n    },\n\n  },\n}\n</script>\n",
+    "storeOutMessages": true,
+    "passthru": false,
+    "resendOnRefresh": true,
+    "templateScope": "local",
+    "className": "",
+    "x": 1060,
+    "y": 340,
+    "wires": [
+      []
+    ]
+  },
+  {
+    "id": "dash_raw",
+    "type": "ui-template",
+    "z": "dash_tab",
+    "group": "dash_g_raw",
+    "page": "",
+    "ui": "",
+    "name": "raw ADC",
+    "order": 1,
+    "width": 12,
+    "height": 0,
+    "head": "",
+    "format": "<template>\n  <div style=\"width: 100%\">\n    <v-expansion-panels>\n      <v-expansion-panel>\n        <v-expansion-panel-title>Raw ADC (untuk kalibrasi)</v-expansion-panel-title>\n        <v-expansion-panel-text>\n          <table class=\"agri-table\">\n            <thead><tr><th>Kanal</th><th>Terakhir</th><th>Min</th><th>Rata-rata</th><th>Max</th></tr></thead>\n            <tbody>\n              <tr v-for=\"c in channels\" :key=\"c.k\">\n                <td>{{ c.l }}</td>\n                <td>{{ show(latest[c.k]) }} <small>counts</small></td>\n                <td>{{ show(stats[c.k]?.min) }}</td>\n                <td>{{ show(stats[c.k]?.avg) }}</td>\n                <td>{{ show(stats[c.k]?.max) }}</td>\n              </tr>\n            </tbody>\n          </table>\n          <div class=\"agri-note\">Min / rata-rata / max selama rentang {{ msg?.range || '\u2013' }} (dari rata-rata per bucket).</div>\n        </v-expansion-panel-text>\n      </v-expansion-panel>\n    </v-expansion-panels>\n  </div>\n</template>\n\n<script>\nexport default {\n  data() {\n    return { channels: [\n      { k: 'npk1_raw', l: 'NPK 1' }, { k: 'npk2_raw', l: 'NPK 2' },\n      { k: 'moist_raw', l: 'Moisture' }, { k: 'ph_raw', l: 'pH' },\n    ] }\n  },\n  computed: {\n    latest() { return this.msg?.payload?.latest || {} },\n    stats() { return this.msg?.payload?.stats || {} },\n  },\n  methods: { show(v) { return v === null || v === undefined ? '\u2013' : Math.round(v) } },\n}\n</script>\n",
+    "storeOutMessages": true,
+    "passthru": false,
+    "resendOnRefresh": true,
+    "templateScope": "local",
+    "className": "",
+    "x": 1060,
+    "y": 620,
+    "wires": [
+      []
+    ]
+  },
+  {
+    "id": "dash_c_n",
+    "type": "ui-chart",
+    "z": "dash_tab",
+    "group": "dash_g_hist",
+    "name": "Nitrogen (N)",
+    "label": "Nitrogen (N) (ppm)",
+    "order": 1,
+    "chartType": "line",
+    "category": "Nitrogen (N)",
+    "categoryType": "str",
+    "xAxisLabel": "",
+    "xAxisProperty": "t",
+    "xAxisPropertyType": "property",
+    "xAxisType": "time",
+    "xAxisFormat": "",
+    "xAxisFormatType": "auto",
+    "xmin": "",
+    "xmax": "",
+    "yAxisLabel": "ppm",
+    "yAxisProperty": "n",
+    "yAxisPropertyType": "property",
+    "ymin": "",
+    "ymax": "",
+    "bins": 10,
+    "action": "replace",
+    "stackSeries": false,
+    "pointShape": "false",
+    "pointRadius": 0,
+    "showLegend": false,
+    "removeOlder": 8,
+    "removeOlderUnit": "86400",
+    "removeOlderPoints": "",
+    "colors": [
+      "#2f7d32",
+      "#FF0000",
+      "#FF7F0E",
+      "#2CA02C",
+      "#A347E1",
+      "#D62728",
+      "#FF9896",
+      "#9467BD",
+      "#C5B0D5"
+    ],
+    "textColor": [
+      "#666666"
+    ],
+    "textColorDefault": true,
+    "gridColor": [
+      "#e5e5e5"
+    ],
+    "gridColorDefault": true,
+    "width": 4,
+    "height": 4,
+    "className": "",
+    "interpolation": "linear",
+    "x": 1060,
+    "y": 400,
+    "wires": [
+      []
+    ]
+  },
+  {
+    "id": "dash_c_p",
+    "type": "ui-chart",
+    "z": "dash_tab",
+    "group": "dash_g_hist",
+    "name": "Fosfor (P)",
+    "label": "Fosfor (P) (ppm)",
+    "order": 2,
+    "chartType": "line",
+    "category": "Fosfor (P)",
+    "categoryType": "str",
+    "xAxisLabel": "",
+    "xAxisProperty": "t",
+    "xAxisPropertyType": "property",
+    "xAxisType": "time",
+    "xAxisFormat": "",
+    "xAxisFormatType": "auto",
+    "xmin": "",
+    "xmax": "",
+    "yAxisLabel": "ppm",
+    "yAxisProperty": "p",
+    "yAxisPropertyType": "property",
+    "ymin": "",
+    "ymax": "",
+    "bins": 10,
+    "action": "replace",
+    "stackSeries": false,
+    "pointShape": "false",
+    "pointRadius": 0,
+    "showLegend": false,
+    "removeOlder": 8,
+    "removeOlderUnit": "86400",
+    "removeOlderPoints": "",
+    "colors": [
+      "#c26a00",
+      "#FF0000",
+      "#FF7F0E",
+      "#2CA02C",
+      "#A347E1",
+      "#D62728",
+      "#FF9896",
+      "#9467BD",
+      "#C5B0D5"
+    ],
+    "textColor": [
+      "#666666"
+    ],
+    "textColorDefault": true,
+    "gridColor": [
+      "#e5e5e5"
+    ],
+    "gridColorDefault": true,
+    "width": 4,
+    "height": 4,
+    "className": "",
+    "interpolation": "linear",
+    "x": 1060,
+    "y": 440,
+    "wires": [
+      []
+    ]
+  },
+  {
+    "id": "dash_c_k",
+    "type": "ui-chart",
+    "z": "dash_tab",
+    "group": "dash_g_hist",
+    "name": "Kalium (K)",
+    "label": "Kalium (K) (ppm)",
+    "order": 3,
+    "chartType": "line",
+    "category": "Kalium (K)",
+    "categoryType": "str",
+    "xAxisLabel": "",
+    "xAxisProperty": "t",
+    "xAxisPropertyType": "property",
+    "xAxisType": "time",
+    "xAxisFormat": "",
+    "xAxisFormatType": "auto",
+    "xmin": "",
+    "xmax": "",
+    "yAxisLabel": "ppm",
+    "yAxisProperty": "k",
+    "yAxisPropertyType": "property",
+    "ymin": "",
+    "ymax": "",
+    "bins": 10,
+    "action": "replace",
+    "stackSeries": false,
+    "pointShape": "false",
+    "pointRadius": 0,
+    "showLegend": false,
+    "removeOlder": 8,
+    "removeOlderUnit": "86400",
+    "removeOlderPoints": "",
+    "colors": [
+      "#7b3fa0",
+      "#FF0000",
+      "#FF7F0E",
+      "#2CA02C",
+      "#A347E1",
+      "#D62728",
+      "#FF9896",
+      "#9467BD",
+      "#C5B0D5"
+    ],
+    "textColor": [
+      "#666666"
+    ],
+    "textColorDefault": true,
+    "gridColor": [
+      "#e5e5e5"
+    ],
+    "gridColorDefault": true,
+    "width": 4,
+    "height": 4,
+    "className": "",
+    "interpolation": "linear",
+    "x": 1060,
+    "y": 480,
+    "wires": [
+      []
+    ]
+  },
+  {
+    "id": "dash_c_ph",
+    "type": "ui-chart",
+    "z": "dash_tab",
+    "group": "dash_g_hist",
+    "name": "pH tanah",
+    "label": "pH tanah (pH)",
+    "order": 4,
+    "chartType": "line",
+    "category": "pH tanah",
+    "categoryType": "str",
+    "xAxisLabel": "",
+    "xAxisProperty": "t",
+    "xAxisPropertyType": "property",
+    "xAxisType": "time",
+    "xAxisFormat": "",
+    "xAxisFormatType": "auto",
+    "xmin": "",
+    "xmax": "",
+    "yAxisLabel": "pH",
+    "yAxisProperty": "ph",
+    "yAxisPropertyType": "property",
+    "ymin": "",
+    "ymax": "",
+    "bins": 10,
+    "action": "replace",
+    "stackSeries": false,
+    "pointShape": "false",
+    "pointRadius": 0,
+    "showLegend": false,
+    "removeOlder": 8,
+    "removeOlderUnit": "86400",
+    "removeOlderPoints": "",
+    "colors": [
+      "#c0392b",
+      "#FF0000",
+      "#FF7F0E",
+      "#2CA02C",
+      "#A347E1",
+      "#D62728",
+      "#FF9896",
+      "#9467BD",
+      "#C5B0D5"
+    ],
+    "textColor": [
+      "#666666"
+    ],
+    "textColorDefault": true,
+    "gridColor": [
+      "#e5e5e5"
+    ],
+    "gridColorDefault": true,
+    "width": 4,
+    "height": 4,
+    "className": "",
+    "interpolation": "linear",
+    "x": 1060,
+    "y": 520,
+    "wires": [
+      []
+    ]
+  },
+  {
+    "id": "dash_c_moist",
+    "type": "ui-chart",
+    "z": "dash_tab",
+    "group": "dash_g_hist",
+    "name": "Kelembapan",
+    "label": "Kelembapan (%)",
+    "order": 5,
+    "chartType": "line",
+    "category": "Kelembapan",
+    "categoryType": "str",
+    "xAxisLabel": "",
+    "xAxisProperty": "t",
+    "xAxisPropertyType": "property",
+    "xAxisType": "time",
+    "xAxisFormat": "",
+    "xAxisFormatType": "auto",
+    "xmin": "",
+    "xmax": "",
+    "yAxisLabel": "%",
+    "yAxisProperty": "moist",
+    "yAxisPropertyType": "property",
+    "ymin": "",
+    "ymax": "",
+    "bins": 10,
+    "action": "replace",
+    "stackSeries": false,
+    "pointShape": "false",
+    "pointRadius": 0,
+    "showLegend": false,
+    "removeOlder": 8,
+    "removeOlderUnit": "86400",
+    "removeOlderPoints": "",
+    "colors": [
+      "#1f6fb2",
+      "#FF0000",
+      "#FF7F0E",
+      "#2CA02C",
+      "#A347E1",
+      "#D62728",
+      "#FF9896",
+      "#9467BD",
+      "#C5B0D5"
+    ],
+    "textColor": [
+      "#666666"
+    ],
+    "textColorDefault": true,
+    "gridColor": [
+      "#e5e5e5"
+    ],
+    "gridColorDefault": true,
+    "width": 4,
+    "height": 4,
+    "className": "",
+    "interpolation": "linear",
+    "x": 1060,
+    "y": 560,
+    "wires": [
+      []
+    ]
+  },
+  {
+    "id": "dash_catch",
+    "type": "catch",
+    "z": "dash_tab",
+    "name": "any error",
+    "scope": null,
+    "uncaught": false,
+    "x": 130,
+    "y": 680,
+    "wires": [
+      [
+        "dash_err"
+      ]
+    ]
+  },
+  {
+    "id": "dash_err",
+    "type": "debug",
+    "z": "dash_tab",
+    "name": "dashboard error",
+    "active": true,
+    "tosidebar": true,
+    "console": true,
+    "tostatus": true,
+    "complete": "error",
+    "targetType": "msg",
+    "statusVal": "error.message",
+    "statusType": "msg",
+    "x": 330,
+    "y": 680,
+    "wires": []
+  }
+]

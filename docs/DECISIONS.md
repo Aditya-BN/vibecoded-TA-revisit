@@ -52,7 +52,7 @@ Each entry: **what I chose** / *why*.
   *The new broker refuses anonymous clients and the old firmware connected anonymously. Existing `secret.h` files need these two lines added.*
 - **Real ESP32s are NOT exposed to the broker tonight.** No existing TCP exposure is free to reuse (ingress-nginx has no TCP services configured, and the Traefik TCP entrypoints belong to Kommander). Options are in the morning report. *The ground rules say: don't create a paid LB, document instead.*
 
-## Dashboard
+## Dashboard (first version, retired 16 Nov; see the Node-RED Dashboard section)
 - **Plain Node.js `http` server + `pg`, vanilla JS front end, Chart.js + Leaflet served from `node_modules` (no CDN, no build step).**
   *Fewest moving parts; only map tiles come from the internet (OpenStreetMap).*
 - **Live updates by polling every 10 s.** *Keeps the API stateless (no MQTT connection per replica); readings arrive every 10 s anyway.*
@@ -71,3 +71,24 @@ Each entry: **what I chose** / *why*.
 - **Changed in Cloudflare, not in git:** one ingress rule added before the catch-all 404 (tunnel config v5 → v6) and a proxied CNAME `new-nodered` → `<tunnel-id>.cfargotunnel.com`. Nothing else in the tunnel or zone was touched.
   *Rollback: remove that ingress rule (`cf tunnels config get/update`) and delete the DNS record `new-nodered.adityabn.my.id`.*
 - **Only Node-RED is public; the dashboard stays internal.** *That's what was asked; the dashboard has no login for viewing.*
+
+## Node-RED Dashboard 2.0 (16 Nov, owner's change of plan; replaces the Node.js dashboard)
+- **`@flowfuse/node-red-dashboard@1.36.1` + `leaflet@1.9.4`, installed by the Node-RED init container; flow in `nodered/flows/dashboard.json`.**
+  *Same mechanism as the postgres node; pinned for reproducible restarts.*
+- **Map = Leaflet inside a `ui-template`, Leaflet served by Node-RED itself (`httpStatic` → `/vendor/leaflet/`).**
+  *Dashboard 2.0 has no map widget; worldmap is a separate web app and would bypass the dashboard login. No CDN; only map tiles come from OpenStreetMap.*
+- **Viewing needs a login: `viewer-user` / `viewer-password` in `nodered-auth` (the admin login works too), checked by `dashboard.middleware` (pages) and `dashboard.ioMiddleware` (socket.io).**
+  *Node-RED's `httpNodeMiddleware` only covers http-in nodes, not Dashboard 2.0, so `/dashboard` would otherwise be open. The device login (`http-user`) is kept for `/getngrokport` only.*
+- **Overview data is broadcast (no `msg._client`), sensor-page data is always client-scoped.**
+  *Everyone sees the same overview, and late joiners get the stored copy. Dashboard 2.0 never stores client-scoped messages, so one viewer's charts can't leak to another.*
+- **Client constraints on for `ui-dropdown`, `ui-button-group`, `ui-chart`, `ui-template` (plus the defaults).** Each browser tab's sensor + range lives in flow context keyed by socket id. It's set from `$pageview` (`?device=` from the overview cards), the dropdown and the range buttons, refreshed every 10 s, and dropped on `$pageleave` or after 6 h idle.
+  *Verified with two browsers: neither one's choice changed the other's screen, including across refresh ticks.*
+- **Dropdown options are re-sent only when the list of sensors (or their names) changes.** *A new DEVICE_ID shows up within one 10 s tick, and nobody's selection is touched otherwise.*
+- **Charts: one SQL history query per viewer, the same rows sent to all five `ui-chart`s, each reading its own column (`yAxisProperty` = `n`, `p`, …, `action: replace`).**
+  *One round trip. Note: the chart's `json` series type doesn't accept a bare column name (`JSON.parse("n")` throws).*
+- **Raw ADC = a collapsible panel (`v-expansion-panels` in a `ui-template`): latest value plus min/avg/max over the chosen range.** *Dashboard 2.0 groups can't collapse.*
+- **The sensor page has no location map; the coordinates are shown as text.** *Section 6 of the handoff dropped it; the overview map covers it.*
+- **`OFFLINE_AFTER_SECONDS` moved to the `nodered-env` ConfigMap (default 120 s).**
+- **Retired after verification:** the `dashboard/` app, its Deployment, Service, Ingress (`agrisoil.10.12.135.205.nip.io`), the `dashboard-env` / `dashboard-app` / `dashboard-public` ConfigMaps and the `dashboard-auth` Secret, all in `agrisoil-dev`. Old screenshots removed; git history keeps everything.
+- **Kept for now: the Postgres role `dashboard` and the `dashboard-password` key in `postgres-auth`.** *They're harmless and unused; drop them in a later cleanup if the Node.js app is never coming back.*
+- **`make-secrets.sh` now adds missing keys to existing Secrets (never changes existing values).** *So new keys like `viewer-password` appear without recreating Secrets.*

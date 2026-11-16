@@ -23,7 +23,7 @@ spec:
           image: nodered/node-red:4.1.1
           command: [sh, /config/init.sh]
           env: &env
-            - {name: EXTRA_NODES, value: "node-red-contrib-postgresql@0.16.2"}
+            - {name: EXTRA_NODES, value: "node-red-contrib-postgresql@0.16.2 @flowfuse/node-red-dashboard@1.36.1 leaflet@1.9.4"}
             - {name: FLOWS, value: /run/nodered/flows.json}   # the image passes $FLOWS to node-red, overriding settings.flowFile
             - {name: npm_config_cache, value: /tmp/.npm}
             - {name: TZ, value: Asia/Jakarta}
@@ -46,6 +46,10 @@ spec:
               valueFrom: {secretKeyRef: {name: nodered-auth, key: http-user}}
             - name: NR_HTTP_PASSWORD
               valueFrom: {secretKeyRef: {name: nodered-auth, key: http-password}}
+            - name: NR_VIEWER_USER
+              valueFrom: {secretKeyRef: {name: nodered-auth, key: viewer-user}}
+            - name: NR_VIEWER_PASSWORD
+              valueFrom: {secretKeyRef: {name: nodered-auth, key: viewer-password}}
           envFrom: &envFrom
             - configMapRef: {name: nodered-env}
           resources:

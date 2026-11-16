@@ -11,10 +11,8 @@ resources:
   - mosquitto.yaml
   - postgres.yaml
   - nodered.yaml
-  - dashboard.yaml
   - ingress.yaml
   - ../../nodered
-  - ../../dashboard
 configMapGenerator:
   - name: mosquitto-config
     files:
@@ -27,11 +25,10 @@ configMapGenerator:
   # Dummy sensors + MQTT port lookup. Add a sensor here, then: kubectl apply -k deploy/k8s
   - name: nodered-env
     literals:
-      - AGRI_DEVICES=Alat1,Alat2,Alat3,Alat4
+      - AGRI_DEVICES=Alat1,Alat2,Alat3,Alat4,Alat5
       - AGRI_LAT=-6.200000
       - AGRI_LNG=106.816666
       # Port /getngrokport hands to the ESP32. In-cluster: 1883. Real sensors: whatever exposes the broker.
       - AGRI_MQTT_PORT=1883
-  - name: dashboard-env
-    literals:
+      # Dashboard: a sensor is offline when its last reading is older than this
       - OFFLINE_AFTER_SECONDS=120

@@ -1,53 +1,39 @@
-# Morning report — 12 Nov 2026
+# Morning report — 16 Nov 2026 (Node-RED Dashboard)
 
-The stack is running in `agrisoil-dev` on cluster `workload01`: 5 pods, 4 dummy sensors, and the dashboard works.
-The PR is **not** opened (no GitHub token on the bastion), so use the link at the bottom.
+The dashboard is now **Node-RED Dashboard 2.0**, inside Node-RED. The old Node.js dashboard is retired.
+Mosquitto, Postgres, the ingest flow, the dummy sensors (now Alat1–5) and `/getngrokport` are unchanged.
+The PR is still **not** opened (no GitHub token on the bastion). Link at the bottom.
 
-## What's live (nip.io = internal HTTP; adityabn.my.id = public HTTPS)
-| What | URL | Login (Secret in `agrisoil-dev`) |
+## What's live
+| What | URL | Login (Secret `nodered-auth` in `agrisoil-dev`) |
 |---|---|---|
-| Dashboard | http://agrisoil.10.12.135.205.nip.io | none to view; renaming a sensor uses `dashboard-auth` |
-| Node-RED editor (public) | **https://new-nodered.adityabn.my.id** (Cloudflare Tunnel) | `nodered-auth` (`admin-user` / `admin-password`) |
-| Node-RED editor (internal) | http://nodered-agrisoil.10.12.135.205.nip.io | same |
-| Port lookup | https://new-nodered.adityabn.my.id/getngrokport | `nodered-auth` (`http-user` / `http-password`) |
+| **Dashboard** | **https://new-nodered.adityabn.my.id/dashboard** | `viewer-user` / `viewer-password` (the admin login works too) |
+| Node-RED editor | https://new-nodered.adityabn.my.id | `admin-user` / `admin-password` |
+| Port lookup | https://new-nodered.adityabn.my.id/getngrokport | `http-user` / `http-password` (device login) |
+| Internal (office LAN) | http://nodered-agrisoil.10.12.135.205.nip.io (+ `/dashboard`) | same as above |
 | MQTT | `mosquitto:1883`, inside the cluster only | `mosquitto-auth` (users `nodered`, `device`) |
-| Postgres | `postgres:5432`, db `agrisoil` | `postgres-auth` (`agrisoil-password`, `dashboard-password`) |
+| Postgres | `postgres:5432`, db `agrisoil` | `postgres-auth` |
 
-To read a password: `kubectl -n agrisoil-dev get secret nodered-auth -o jsonpath='{.data.admin-password}' | base64 -d`.
-The passwords are random, were made by `deploy/k8s/make-secrets.sh`, and are not in git.
+Read a password: `kubectl -n agrisoil-dev get secret nodered-auth -o jsonpath='{.data.viewer-password}' | base64 -d`
 
-## Definition of done
-1. ✅ Pods: dashboard ×2, mosquitto, nodered-0 and postgres-0 are all 1/1 Running.
-2. ✅ `mosquitto_sub` (from the mosquitto pod) shows Alat1–3 every 10 s. Alat4 is there too now.
-3. ✅ `devices` and `readings` fill up (150+ readings at 01:37 WIB). WIB→UTC conversion checked.
-4. ✅ `/getngrokport`: no auth or wrong password → 401; with auth → `1883` as text/plain.
-5. ✅ The dashboard showed 3 sensors with charts. It shows 4 now, after test 6.
-6. ✅ I added `Alat4` to `AGRI_DEVICES` (ConfigMap only). It was on the dashboard within seconds of the Node-RED restart.
-7. ✅ Every pod was restarted once. DB rows were kept. The retained messages read right after the broker restart were stamped before it (01:33:09 vs restart at 01:33:12 WIB).
-8. ✅ Screenshots: `docs/screenshots/overview.png`, `docs/screenshots/sensor-Alat2.png`.
+## Checklist (handoff section 6)
+- ✅ Dashboard 2.0 (`@flowfuse/node-red-dashboard@1.36.1`, pinned, installed by the init container). Flow in `nodered/flows/dashboard.json`.
+- ✅ **Overview:** a card per sensor from `devices` (N/P/K/pH/moisture with units, last seen, online/offline after `OFFLINE_AFTER_SECONDS`), plus a Leaflet map of every sensor.
+- ✅ **Sensor page:** the device dropdown fills from `devices` by itself; 1 jam / 24 jam / 7 hari range; a chart per value (bucketed in SQL); raw ADC in a collapsible panel.
+- ✅ **Scalability:** with a browser already open, I published Alat5's first reading as the `device` user, the way an ESP32 would. Its card and dropdown entry appeared within 10 s, with no flow edit and no redeploy. The open viewer's selection didn't move. Alat5 is now a dummy sensor too.
+- ✅ **Client constraints:** two browsers; B switching to 7 hari and A switching to Alat2 didn't affect each other, including across the 10 s refresh.
+- ✅ **Login:** `/dashboard` pages, assets and socket.io all refuse anonymous users (401 / "Unauthorized"), and the device login is refused there too. `/getngrokport` still uses only the device login.
+- ✅ **Old dashboard retired:** `dashboard/` code, Deployment, Service, Ingress, its ConfigMaps and the `dashboard-auth` Secret, deleted only inside `agrisoil-dev` and only after the checks above. The old nip.io URL now gives 404.
+- ✅ Screenshots: `docs/screenshots/nodered-overview.png`, `docs/screenshots/nodered-sensor-Alat2.png`.
+- ✅ All pods Running: mosquitto, postgres-0, nodered-0.
 
-Also tested: bad JSON, a non-object payload and a bad device ID are logged and dropped, and Node-RED keeps running.
+## Still open: you decide
+- **MQTT for real ESP32s** is still inside the cluster only. Options (NodePort recommended) are in `docs/DECISIONS.md`. Port lookup over HTTPS works already.
+- **Firmware:** add `mqttUser` / `mqttPassword` to `secret.h`. CI compiles it; check the run.
+- **Security:** the cloudflared tunnel token is a plain container argument in `workload01-n2lws-pj5hl`. Move it to a Secret and rotate it.
+- **Leftovers you may drop:** the Postgres role `dashboard` and the `dashboard-password` key (unused now).
+- **Dashboard edits made in the Node-RED editor are lost on restart.** Change `nodered/flows/dashboard.json` in git.
+- **Dummy sensors** write about 43k rows/day with 5 sensors. Trim `AGRI_DEVICES` when you don't need them.
+- **PR:** https://github.com/Aditya-BN/vibecoded-TA-revisit/compare/main...claude/npk-vibecoded-rewrite-20ognj
 
-## Add a real sensor
-1. In `agrisoil/agrisoil.ino`, set a new `DEVICE_ID` (letters, digits and `_` only).
-2. **New:** add `mqttUser` / `mqttPassword` to your `secret.h` (see `secret.example.h`). Use the `device` login from `mosquitto-auth`, because the broker refuses anonymous clients.
-3. In `send_mqtt.ino`, set `MQTT_PORT_URL` to `https://new-nodered.adityabn.my.id/getngrokport` and point `MQTT_HOST` at the new broker. **Blocked:** the broker isn't reachable from outside the cluster yet (see below).
-4. Power it on. It appears on the dashboard by itself.
-
-## Left / blocked: you decide
-- **Exposing MQTT to real ESP32s.** The cluster has no free TCP exposure, so I created nothing. Options:
-  (a) a NodePort Service (free, port 30000+; set `AGRI_MQTT_PORT` to match);
-  (b) a MetalLB LoadBalancer (on-prem, so no money, but it takes an IP from the shared pool);
-  (c) a TCP entry in ingress-nginx (changes a shared controller);
-  (d) keep ngrok in front of `mosquitto`.
-  I'd pick (a).
-- **Port lookup over HTTPS works now:** set `MQTT_PORT_URL` to `https://new-nodered.adityabn.my.id/getngrokport`. The tunnel only carries HTTP, so the broker itself still needs one of the options above.
-- **Security:** the cloudflared Deployment in `workload01-n2lws-pj5hl` has the tunnel token as a plain container argument, so anyone who can read Deployments there can see it. Consider moving it to a Secret (`TUNNEL_TOKEN` env) and rotating it. I didn't change it.
-- **PR:** open it yourself: https://github.com/Aditya-BN/vibecoded-TA-revisit/compare/main...claude/npk-vibecoded-rewrite-20ognj
-- **Firmware change not compiled here.** CI (`compile.yml`) will check it on push. Please look at the run.
-- Readings that arrive while Postgres is down are dropped (QoS 0, no buffer).
-- Edits made in the Node-RED editor are lost on restart, because flows come from git (`nodered/flows/`). Export changes to the repo.
-- The dummy sensors keep running and write about 35k rows a day. Set `AGRI_DEVICES` to empty, or scale Node-RED down, when you don't need them.
-- To remove everything: `kubectl delete ns agrisoil-dev`. The PVCs are deleted too (reclaim policy Delete).
-
-Details and the reasons behind each choice: `docs/DECISIONS.md`.
+The 12 Nov stack report is in git history (this file, commit `8dfe904`). Reasons for every choice: `docs/DECISIONS.md`.

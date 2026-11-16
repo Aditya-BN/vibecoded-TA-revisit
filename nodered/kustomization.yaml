@@ -12,5 +12,6 @@ configMapGenerator:
       - init.sh
   - name: nodered-flows
     files:
+      - flows/dashboard.json
       - flows/dummy-sensors.json
       - flows/ingest.json

@@ -150,3 +150,35 @@ When finished (or when time runs out), write `docs/MORNING-REPORT.md`, push it, 
 - How to add a real sensor: set `DEVICE_ID` in `agrisoil/agrisoil.ino` and point `MQTT_HOST` / the port lookup at the new broker.
 - What's left or blocked, and what the owner has to decide.
 - The PR link.
+
+---
+
+## 6. Change of plan (16 Nov): the dashboard is **Node-RED Dashboard**
+
+The owner wants the dashboard built **inside Node-RED** with Node-RED Dashboard, not as a separate web app.
+Everything else from the first run stays: Mosquitto, Postgres, the ingest flow, the dummy sensors, `/getngrokport`, the Cloudflare route.
+
+**What to build**
+- Use **Dashboard 2.0** (`@flowfuse/node-red-dashboard`), not the deprecated 1.x `node-red-dashboard`.
+  - Install it the same way as `node-red-contrib-postgresql`: init container, pinned version.
+- Read data from Postgres with the postgresql node. Don't add a second data path.
+- Keep the flows in git as `nodered/flows/dashboard.json`. Edits made in the editor are lost on restart.
+
+**Pages**
+
+| Page | Contents |
+|---|---|
+| **Overview** | A card per sensor, built from the `devices` table: latest N/P/K/pH/moisture with units, last seen, and an offline state after `OFFLINE_AFTER_SECONDS`. A map of every sensor's last location (Dashboard 2.0 has no map widget: use a `ui-template` with Leaflet, or worldmap, and note the choice). |
+| **Sensor** | A device dropdown filled from `devices` and refreshed automatically, a 1 h / 24 h / 7 d range picker, a chart per value (time-bucketed in SQL as before), and raw ADC values in a collapsible group. |
+
+**Rules**
+- **Scalability rule still holds:** a new `DEVICE_ID` that publishes once must show up in the overview and the dropdown with no flow edit and no redeploy. Retest with a new dummy sensor (e.g. `Alat5`).
+- **Several people may view at once.** Turn on Dashboard 2.0 client constraints (`msg._client`, "accept client constraints") so one viewer's dropdown or range choice doesn't change everyone else's screen.
+- **Login:** the dashboard is served under `/dashboard` on the public Node-RED URL. Keep viewing behind a login, and write down which Secret holds it.
+- **Retire the custom dashboard** (`dashboard/`, its Deployment, Service, Ingress and the `dashboard-env` / `dashboard-auth` objects) **only after** the Node-RED dashboard is verified. Delete only inside `agrisoil-dev`. Git history keeps the code.
+
+**Done when**
+- Screenshots of both pages are in `docs/screenshots/`.
+- `docs/DECISIONS.md` and `docs/MORNING-REPORT.md` are updated.
+- Everything is pushed to the same branch.
+- All ground rules in section 0 still apply.
